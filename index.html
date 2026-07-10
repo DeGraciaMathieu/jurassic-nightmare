@@ -359,6 +359,32 @@ const SFX = {
     og.gain.exponentialRampToValueAtTime(0.16,t+0.07); og.gain.exponentialRampToValueAtTime(0.0001,t+0.26);
     o.connect(og); og.connect(this.master); o.start(t+0.05); o.stop(t+0.28);
   },
+  // ---- rex battering a door (deep double thump + muffled clang + rumbling tail) ----
+  doorHit(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime;
+    // punch + sub-bass body
+    const o=this.ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(80,t); o.frequency.exponentialRampToValueAtTime(30,t+0.5);
+    const og=this.ctx.createGain(); og.gain.setValueAtTime(1.5,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t+0.55);
+    const sub=this.ctx.createOscillator(); sub.type='triangle';
+    sub.frequency.setValueAtTime(45,t); sub.frequency.exponentialRampToValueAtTime(20,t+0.7);
+    const sg=this.ctx.createGain(); sg.gain.setValueAtTime(1.1,t); sg.gain.exponentialRampToValueAtTime(0.0001,t+0.7);
+    sub.connect(sg); sg.connect(this.master); sub.start(t); sub.stop(t+0.7);
+    // muffled clang
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(0.3);
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=3.5;
+    bp.frequency.setValueAtTime(520,t); bp.frequency.exponentialRampToValueAtTime(240,t+0.3);
+    const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.7,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
+    src.connect(bp); bp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+0.3);
+    // heavy structure rumble fading out
+    const src2=this.ctx.createBufferSource(); src2.buffer=this.noiseBuffer(0.6);
+    const lp=this.ctx.createBiquadFilter(); lp.type='lowpass';
+    lp.frequency.setValueAtTime(220,t); lp.frequency.exponentialRampToValueAtTime(90,t+0.6);
+    const rg=this.ctx.createGain(); rg.gain.setValueAtTime(1.0,t); rg.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+    src2.connect(lp); lp.connect(rg); rg.connect(this.master); src2.start(t); src2.stop(t+0.6);
+  },
   // ---- card pickup ----
   pickup(){
     if(!this.ctx||this.muted) return;
@@ -764,6 +790,7 @@ function update(dt){
           rex.hitCD-=dt;
           if(rex.hitCD<=0){
             rex.hitCD=DOOR_HIT_CD; D.hp--; D.hitT=0.3;
+            SFX.doorHit();
             if(D.hp<=0) D.broken=true;
           }
         } else {
