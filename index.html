@@ -570,8 +570,9 @@ function updateHUD(){
 }
 
 // ---- collisions ----
-// intact doors always block rexes; they only block the player/lures while closed
-function doorBlocksRex(c,r){ const D=doorMap.get(c+','+r); return !!D && !D.broken; }
+// intact doors block rexes while closed — but a rex can slip through the
+// doorway while it is still open, before it slides shut
+function doorBlocksRex(c,r){ const D=doorMap.get(c+','+r); return !!D && !D.broken && D.open<0.75; }
 function doorSolid(c,r){ const D=doorMap.get(c+','+r); return !!D && !D.broken && D.open<0.6; }
 function circleHitsWalls(cx,cy,r){
   const c0=Math.floor((cx-r)/TILE), c1=Math.floor((cx+r)/TILE);
@@ -724,12 +725,14 @@ function update(dt){
   // hidden while standing in tall grass
   player.hidden = grassSet.has(Math.floor(player.x/TILE)+','+Math.floor(player.y/TILE));
 
-  // doors slide open for the player and shut behind them
+  // doors slide open for the player and shut behind them;
+  // a rex in (or committed to) the doorway wedges the door open
   for(const D of doors){
     if(D.hitT>0) D.hitT-=dt;
     if(D.broken) continue;
     const near=Math.hypot(player.x-D.x,player.y-D.y)<DOOR_SENSE;
-    D.open=Math.max(0,Math.min(1, D.open+(near?1:-1)*DOOR_SPEED*dt));
+    const wedged=rexes.some(rx=>(rx.c===D.c&&rx.r===D.r)||(rx.tc===D.c&&rx.tr===D.r));
+    D.open=Math.max(0,Math.min(1, D.open+((near||wedged)?1:-1)*DOOR_SPEED*dt));
   }
 
   // lures physics
@@ -781,18 +784,22 @@ function update(dt){
         const pick=(fwd.length?fwd:opts); nxt=pick[Math.floor(rng()*pick.length)];
       }
       if(nxt){
-        const D=rex.chasing?doorMap.get(nxt.c+','+nxt.r):null;
-        if(D && !D.broken){
-          // a chasing rex batters the door down — several blows
-          // (it stays committed to the door even once the prey is out of sight)
-          rex.alert=Math.max(rex.alert,0.5);
-          if(nxt.c!==rex.c) rex.dir=nxt.c>rex.c?1:-1;
-          rex.hitCD-=dt;
-          if(rex.hitCD<=0){
-            rex.hitCD=DOOR_HIT_CD; D.hp--; D.hitT=0.3;
-            SFX.doorHit();
-            if(D.hp<=0) D.broken=true;
+        const D=doorMap.get(nxt.c+','+nxt.r);
+        if(D && !D.broken && D.open<0.75){
+          if(rex.chasing){
+            // a chasing rex batters the closed door down — several blows
+            // (it stays committed to the door even once the prey is out of sight)
+            rex.alert=Math.max(rex.alert,0.5);
+            if(nxt.c!==rex.c) rex.dir=nxt.c>rex.c?1:-1;
+            rex.hitCD-=dt;
+            // swing only at a (nearly) shut door, not one still sliding
+            if(rex.hitCD<=0 && D.open<0.25){
+              rex.hitCD=DOOR_HIT_CD; D.hp--; D.hitT=0.3;
+              SFX.doorHit();
+              if(D.hp<=0) D.broken=true;
+            }
           }
+          // not chasing: stand off — the path is recomputed against closed doors
         } else {
           rex.hitCD=DOOR_HIT_CD*0.5;
           rex.prevC=rex.c; rex.prevR=rex.r; rex.tc=nxt.c; rex.tr=nxt.r;
