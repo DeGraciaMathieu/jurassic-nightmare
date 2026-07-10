@@ -483,6 +483,21 @@ function circleHitsWalls(cx,cy,r){
   }
   return false;
 }
+// axis move with corner rounding: if the move is blocked only by a tile
+// corner, slide the player along the perpendicular axis to round it off
+function movePlayerAxis(dx,dy){
+  if(!circleHitsWalls(player.x+dx,player.y+dy,PR)){ player.x+=dx; player.y+=dy; return; }
+  const amt=Math.abs(dx||dy);
+  for(let n=1;n<=PR;n++){
+    if(dx!==0){
+      if(!circleHitsWalls(player.x+dx,player.y-n,PR)){ player.y-=Math.min(n,amt); return; }
+      if(!circleHitsWalls(player.x+dx,player.y+n,PR)){ player.y+=Math.min(n,amt); return; }
+    } else {
+      if(!circleHitsWalls(player.x-n,player.y+dy,PR)){ player.x-=Math.min(n,amt); return; }
+      if(!circleHitsWalls(player.x+n,player.y+dy,PR)){ player.x+=Math.min(n,amt); return; }
+    }
+  }
+}
 function losBlocked(x1,y1,x2,y2){
   const steps=Math.ceil(Math.hypot(x2-x1,y2-y1)/8);
   for(let s=1;s<steps;s++){
@@ -588,8 +603,8 @@ function update(dt){
   const l=Math.hypot(vx,vy);
   if(l>0){ vx/=l; vy/=l; player.fx=vx; player.fy=vy;
     const mx=vx*PLAYER_SPEED*dt, my=vy*PLAYER_SPEED*dt;
-    if(!circleHitsWalls(player.x+mx,player.y,PR)) player.x+=mx;
-    if(!circleHitsWalls(player.x,player.y+my,PR)) player.y+=my;
+    if(mx!==0) movePlayerAxis(mx,0);
+    if(my!==0) movePlayerAxis(0,my);
   }
 
   throwCD=Math.max(0,throwCD-dt);
