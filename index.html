@@ -58,6 +58,26 @@
     box-shadow:none; letter-spacing:0; cursor:pointer;
   }
   #mute:hover, #throwbtn:hover { box-shadow:0 0 10px rgba(150,10,0,0.5); }
+  /* ---- mobile touch controls ---- */
+  #touchpad { display:none; margin-top:10px; padding:0 6px; justify-content:space-between; align-items:center; user-select:none; -webkit-user-select:none; }
+  #dpad { display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(3,56px); gap:6px; }
+  .dbtn {
+    background:linear-gradient(180deg,#1a2416,#0e150c); border:2px solid #3a4d2a; border-radius:12px;
+    color:#c9d2c0; font-size:24px; display:flex; align-items:center; justify-content:center;
+    touch-action:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .dbtn:active { background:#33501d; border-color:#6aa03a; }
+  #dup{grid-column:2;grid-row:1;} #dleft{grid-column:1;grid-row:2;} #dright{grid-column:3;grid-row:2;} #ddown{grid-column:2;grid-row:3;}
+  #flareBtn {
+    width:96px; height:96px; border-radius:50%; border:2px solid #ff3418; color:#fff;
+    background:radial-gradient(circle at 40% 34%,#ff6a3a,#8a1109 75%);
+    font-size:13px; font-weight:bold; letter-spacing:1px; line-height:1.1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    box-shadow:0 0 20px rgba(200,20,0,0.5); touch-action:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  #flareBtn:active { transform:scale(0.93); }
+  #flareBtn .em { font-size:26px; }
+  @media (pointer:coarse) { #touchpad { display:flex; } #throwbtn { display:none; } }
   .keys { font-size:13px; color:#5a6852; margin-top:16px; }
   .keys kbd { background:#1a1210; border:1px solid #3a2420; border-radius:4px; padding:2px 7px; margin:0 2px; font-family:monospace; }
 </style>
@@ -81,6 +101,15 @@
     <p style="color:#c0472e;font-size:13px;">⚠️ Vous ne courez pas plus vite que lui. Cachez-vous, ruser, survivez.</p>
     <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
     <button id="btn">ENTRER DANS LE NOIR</button>
+  </div>
+  <div id="touchpad">
+    <div id="dpad">
+      <button class="dbtn" id="dup" aria-label="haut">▲</button>
+      <button class="dbtn" id="dleft" aria-label="gauche">◀</button>
+      <button class="dbtn" id="dright" aria-label="droite">▶</button>
+      <button class="dbtn" id="ddown" aria-label="bas">▼</button>
+    </div>
+    <button id="flareBtn" aria-label="lancer un flare"><span class="em">🔥</span>FLARE</button>
   </div>
 </div>
 
@@ -299,6 +328,23 @@ const SFX = {
 };
 el.mute.addEventListener('click',()=>SFX.toggleMute());
 el.throwbtn.addEventListener('click',()=>throwLure());
+
+// on-screen D-pad (mobile)
+function bindDir(id,key){
+  const b=document.getElementById(id); if(!b) return;
+  const on=e=>{ e.preventDefault(); keys[key]=true; };
+  const off=e=>{ keys[key]=false; };
+  b.addEventListener('pointerdown',on);
+  b.addEventListener('pointerup',off);
+  b.addEventListener('pointercancel',off);
+  b.addEventListener('pointerleave',off);
+}
+bindDir('dup','arrowup'); bindDir('ddown','arrowdown');
+bindDir('dleft','arrowleft'); bindDir('dright','arrowright');
+const flareBtn=document.getElementById('flareBtn');
+if(flareBtn) flareBtn.addEventListener('pointerdown',e=>{ e.preventDefault(); SFX.init(); throwLure(); });
+// safety: release all directions if a pointer is lifted anywhere
+window.addEventListener('pointerup',()=>{ keys['arrowup']=keys['arrowdown']=keys['arrowleft']=keys['arrowright']=false; });
 
 // ---- per-level tuning ----
 const LEVELS = [
