@@ -154,7 +154,7 @@
   <div id="overlay">
     <h1>JURASSIC<span class="sub">N I G H T M A R E</span></h1>
     <p id="ovtext">La nuit est tombée sur le parc. Le courant a sauté. Perdu dans un dédale de couloirs, vous n'avez qu'une lampe torche mourante. Trouvez les <b>cartes d'accès</b> 🎫 puis rejoignez la <b>sortie</b> 🚪... avant que <b>ça</b> vous trouve dans le noir.</p>
-    <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs et filer.</p>
+    <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs · 🚪 les <b>portes</b> s'ouvrent pour vous, lui devra les défoncer.</p>
     <p style="color:#c0472e;font-size:13px;">⚠️ Vous ne courez pas plus vite que lui. Cachez-vous, ruser, survivez.</p>
     <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Sprint : <kbd>Shift</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
     <button id="btn">ENTRER DANS LE NOIR</button>
@@ -424,9 +424,9 @@ window.addEventListener('pointerup',()=>{ keys['arrowup']=keys['arrowdown']=keys
 
 // ---- per-level tuning ----
 const LEVELS = [
-  { name:"Secteur 1 — L'accueil",     rex:1, cards:3, braid:0.14, vision:165, sight:145, patrol:78,  chase:150 },
-  { name:"Secteur 2 — La volière",    rex:2, cards:4, braid:0.09, vision:140, sight:160, patrol:88,  chase:165 },
-  { name:"Secteur 3 — Le paddock",    rex:3, cards:5, braid:0.05, vision:118, sight:180, patrol:98,  chase:188 },
+  { name:"Secteur 1 — L'accueil",     rex:1, cards:3, braid:0.14, vision:165, sight:145, patrol:78,  chase:150, doors:6 },
+  { name:"Secteur 2 — La volière",    rex:2, cards:4, braid:0.09, vision:140, sight:160, patrol:88,  chase:165, doors:8 },
+  { name:"Secteur 3 — Le paddock",    rex:3, cards:5, braid:0.05, vision:118, sight:180, patrol:98,  chase:188, doors:10 },
 ];
 
 // ---- RNG ----
@@ -464,7 +464,9 @@ let levelIdx=0, score=0, levelTime=0;
 let grid, player, exit, cards, rexes, cfg;
 let visionR=160, shake=0, scareT=0, bloodSplats=[], hbTimer=0;
 let lures=[], lureCount=3, grassSet=new Set(), throwCD=0;
+let doors=[], doorMap=new Map();
 const LURE_HEAR=320, LURE_LIFE=5, HIDE_SIGHT=54;
+const DOOR_HP=4, DOOR_SENSE=52, DOOR_SPEED=7, DOOR_HIT_CD=0.7;
 const keys={};
 
 const PR=11, RR=15, CR=9;
@@ -498,12 +500,32 @@ function loadLevel(i){
     rexes.push({ x:p.x,y:p.y, c:cell.c,r:cell.r, tc:cell.c,tr:cell.r,
                  dir:1, chasing:false, alert:0,
                  seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
-                 roarCD:0, lureTimer:0, lureX:null, lureY:null });
+                 roarCD:0, lureTimer:0, lureX:null, lureY:null, hitCD:0 });
   }
   // tall grass hiding patches
   grassSet=new Set();
   const gpool=shuffle(openCells()).filter(o=>!(o.c===start.c&&o.r===start.r)&&!(o.c===goal.c&&o.r===goal.r));
   for(let k=0;k<Math.min(18,gpool.length);k++) grassSet.add(gpool[k].c+','+gpool[k].r);
+
+  // sliding security doors on corridor chokepoints
+  doors=[]; doorMap=new Map();
+  const dpool=shuffle(openCells()).filter(o=>{
+    if(cellDist(o,start)<3 || cellDist(o,goal)<2) return false;
+    if(grassSet.has(o.c+','+o.r)) return false;
+    if(cards.some(cd=>Math.floor(cd.x/TILE)===o.c && Math.floor(cd.y/TILE)===o.r)) return false;
+    if(rexes.some(rx=>rx.c===o.c && rx.r===o.r)) return false;
+    const h = !isWall(o.c-1,o.r) && !isWall(o.c+1,o.r) && isWall(o.c,o.r-1) && isWall(o.c,o.r+1);
+    const v = !isWall(o.c,o.r-1) && !isWall(o.c,o.r+1) && isWall(o.c-1,o.r) && isWall(o.c+1,o.r);
+    return h||v;
+  });
+  for(const o of dpool){
+    if(doors.length>=cfg.doors) break;
+    if(doors.some(D=>cellDist(D,o)<4)) continue;
+    const p=cellCenter(o.c,o.r);
+    const D={ c:o.c, r:o.r, x:p.x, y:p.y, horiz:!isWall(o.c-1,o.r),
+              open:0, hp:DOOR_HP, broken:false, hitT:0 };
+    doors.push(D); doorMap.set(o.c+','+o.r,D);
+  }
 
   lures=[]; lureCount=3; throwCD=0;
   stamina=STAMINA_MAX; exhausted=false;
@@ -522,11 +544,14 @@ function updateHUD(){
 }
 
 // ---- collisions ----
+// intact doors always block rexes; they only block the player/lures while closed
+function doorBlocksRex(c,r){ const D=doorMap.get(c+','+r); return !!D && !D.broken; }
+function doorSolid(c,r){ const D=doorMap.get(c+','+r); return !!D && !D.broken && D.open<0.6; }
 function circleHitsWalls(cx,cy,r){
   const c0=Math.floor((cx-r)/TILE), c1=Math.floor((cx+r)/TILE);
   const r0=Math.floor((cy-r)/TILE), r1=Math.floor((cy+r)/TILE);
   for(let rr=r0;rr<=r1;rr++)for(let cc=c0;cc<=c1;cc++){
-    if(isWall(cc,rr)){
+    if(isWall(cc,rr) || doorSolid(cc,rr)){
       const nx=Math.max(cc*TILE,Math.min(cx,cc*TILE+TILE));
       const ny=Math.max(rr*TILE,Math.min(cy,rr*TILE+TILE));
       const dx=cx-nx, dy=cy-ny;
@@ -554,13 +579,16 @@ function losBlocked(x1,y1,x2,y2){
   const steps=Math.ceil(Math.hypot(x2-x1,y2-y1)/8);
   for(let s=1;s<steps;s++){
     const t=s/steps, px=x1+(x2-x1)*t, py=y1+(y2-y1)*t;
-    if(isWall(Math.floor(px/TILE),Math.floor(py/TILE))) return true;
+    const c=Math.floor(px/TILE), r=Math.floor(py/TILE);
+    if(isWall(c,r) || doorSolid(c,r)) return true;
   }
   return false;
 }
 
 // ---- BFS next-step for chasing ----
-function bfsNext(sc,sr,gc,gr){
+// doorsBlock: intact doors are impassable (patrolling rexes route around them);
+// a chasing rex paths through them and smashes whatever door it runs into
+function bfsNext(sc,sr,gc,gr,doorsBlock){
   if(sc===gc&&sr===gr) return null;
   const prev=Array.from({length:ROWS},()=>Array(COLS).fill(null));
   const seen=Array.from({length:ROWS},()=>Array(COLS).fill(false));
@@ -577,7 +605,7 @@ function bfsNext(sc,sr,gc,gr){
     }
     for(const [dx,dy] of N){
       const nc=c+dx, nr=r+dy;
-      if(nc>=0&&nr>=0&&nc<COLS&&nr<ROWS&&!seen[nr][nc]&&grid[nr][nc]===0){
+      if(nc>=0&&nr>=0&&nc<COLS&&nr<ROWS&&!seen[nr][nc]&&grid[nr][nc]===0&&!(doorsBlock&&doorBlocksRex(nc,nr))){
         seen[nr][nc]=true; prev[nr][nc]=[c,r]; q.push([nc,nr]);
       }
     }
@@ -670,6 +698,14 @@ function update(dt){
   // hidden while standing in tall grass
   player.hidden = grassSet.has(Math.floor(player.x/TILE)+','+Math.floor(player.y/TILE));
 
+  // doors slide open for the player and shut behind them
+  for(const D of doors){
+    if(D.hitT>0) D.hitT-=dt;
+    if(D.broken) continue;
+    const near=Math.hypot(player.x-D.x,player.y-D.y)<DOOR_SENSE;
+    D.open=Math.max(0,Math.min(1, D.open+(near?1:-1)*DOOR_SPEED*dt));
+  }
+
   // lures physics
   for(const L of lures){
     if(L.flying){
@@ -711,14 +747,30 @@ function update(dt){
     if(Math.hypot(tCtr.x-rex.x,tCtr.y-rex.y)<2){
       rex.x=tCtr.x; rex.y=tCtr.y; rex.c=rex.tc; rex.r=rex.tr;
       let nxt=null;
-      if(goalC!=null && !(goalC===rex.c&&goalR===rex.r)) nxt=bfsNext(rex.c,rex.r,goalC,goalR);
+      if(goalC!=null && !(goalC===rex.c&&goalR===rex.r)) nxt=bfsNext(rex.c,rex.r,goalC,goalR,!rex.chasing);
       if(!nxt){ // wander: random open neighbour, avoid reversing
         const opts=[[0,-1],[0,1],[-1,0],[1,0]].map(([dx,dy])=>({c:rex.c+dx,r:rex.r+dy}))
-          .filter(o=>!isWall(o.c,o.r));
+          .filter(o=>!isWall(o.c,o.r)&&!doorBlocksRex(o.c,o.r));
         const fwd=opts.filter(o=>!(o.c===rex.prevC&&o.r===rex.prevR));
         const pick=(fwd.length?fwd:opts); nxt=pick[Math.floor(rng()*pick.length)];
       }
-      if(nxt){ rex.prevC=rex.c; rex.prevR=rex.r; rex.tc=nxt.c; rex.tr=nxt.r; }
+      if(nxt){
+        const D=rex.chasing?doorMap.get(nxt.c+','+nxt.r):null;
+        if(D && !D.broken){
+          // a chasing rex batters the door down — several blows
+          // (it stays committed to the door even once the prey is out of sight)
+          rex.alert=Math.max(rex.alert,0.5);
+          if(nxt.c!==rex.c) rex.dir=nxt.c>rex.c?1:-1;
+          rex.hitCD-=dt;
+          if(rex.hitCD<=0){
+            rex.hitCD=DOOR_HIT_CD; D.hp--; D.hitT=0.3;
+            if(D.hp<=0) D.broken=true;
+          }
+        } else {
+          rex.hitCD=DOOR_HIT_CD*0.5;
+          rex.prevC=rex.c; rex.prevR=rex.r; rex.tc=nxt.c; rex.tr=nxt.r;
+        }
+      }
     }
     // move toward target center
     const tc2=cellCenter(rex.tc,rex.tr);
@@ -782,6 +834,43 @@ function drawWorld(){
     rr(x+2,y+2,TILE-4,TILE-4,4); ctx.fill();
     ctx.fillStyle='rgba(40,60,30,0.4)';
     for(let ix=x+7;ix<x+TILE-3;ix+=13)for(let iy=y+7;iy<y+TILE-3;iy+=13){ ctx.beginPath(); ctx.arc(ix,iy,3,0,7); ctx.fill(); }
+  }
+
+  // sliding security doors
+  for(const D of doors){
+    const x=D.c*TILE, y=D.r*TILE;
+    // frame posts embedded in the walls
+    ctx.fillStyle='#39412f';
+    if(D.horiz){ ctx.fillRect(D.x-7,y-2,14,6); ctx.fillRect(D.x-7,y+TILE-4,14,6); }
+    else { ctx.fillRect(x-2,D.y-7,6,14); ctx.fillRect(x+TILE-4,D.y-7,6,14); }
+    if(D.broken){ // smashed through: twisted stubs and debris
+      ctx.fillStyle='#4c4436';
+      if(D.horiz){ ctx.fillRect(D.x-3,y+3,6,4); ctx.fillRect(D.x-3,y+TILE-7,6,4); }
+      else { ctx.fillRect(x+3,D.y-3,4,6); ctx.fillRect(x+TILE-7,D.y-3,4,6); }
+      ctx.fillStyle='rgba(80,70,52,0.8)';
+      ctx.beginPath(); ctx.arc(D.x-6,D.y+5,2.4,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(D.x+5,D.y-4,2,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(D.x+2,D.y+9,1.5,0,7); ctx.fill();
+      continue;
+    }
+    const sh=D.hitT>0?Math.sin(performance.now()/16)*2:0;
+    const half=(TILE/2-1)*(1-D.open), dmg=1-D.hp/DOOR_HP;
+    // two halves sliding into the walls, hazard-striped
+    ctx.fillStyle=D.hitT>0?'#9a5f38':'#5c574a';
+    if(D.horiz){
+      ctx.fillRect(D.x-4+sh,y+1,8,half); ctx.fillRect(D.x-4+sh,y+TILE-1-half,8,half);
+      ctx.fillStyle='rgba(212,166,48,0.7)';
+      for(let i=3;i<half-3;i+=9){ ctx.fillRect(D.x-4+sh,y+i,8,3); ctx.fillRect(D.x-4+sh,y+TILE-i-3,8,3); }
+    } else {
+      ctx.fillRect(x+1,D.y-4+sh,half,8); ctx.fillRect(x+TILE-1-half,D.y-4+sh,half,8);
+      ctx.fillStyle='rgba(212,166,48,0.7)';
+      for(let i=3;i<half-3;i+=9){ ctx.fillRect(x+i,D.y-4+sh,3,8); ctx.fillRect(x+TILE-i-3,D.y-4+sh,3,8); }
+    }
+    if(dmg>0 && half>4){ // battering dents
+      ctx.fillStyle=`rgba(15,12,8,${0.25+dmg*0.45})`;
+      if(D.horiz){ ctx.fillRect(D.x-2+sh,y+2,4,half-2); ctx.fillRect(D.x-2+sh,y+TILE-half+1,4,half-2); }
+      else { ctx.fillRect(x+2,D.y-2+sh,half-2,4); ctx.fillRect(x+TILE-half+1,D.y-2+sh,half-2,4); }
+    }
   }
 
   // exit
