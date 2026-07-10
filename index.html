@@ -198,6 +198,55 @@ const SFX = {
     const ng=this.ctx.createGain(); ng.gain.setValueAtTime(big?0.4:0.2,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     src.connect(bp); bp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+dur);
   },
+  // ---- raptor scream (death) : shrill, raspy screech ----
+  raptorScream(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, dur=1.35;
+    const out=this.ctx.createGain(); out.gain.value=0; out.connect(this.master);
+    out.gain.setValueAtTime(0.0001,t);
+    out.gain.exponentialRampToValueAtTime(1.0,t+0.05);
+    out.gain.setValueAtTime(1.0,t+0.7);
+    out.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    // harsh distortion
+    const ws=this.ctx.createWaveShaper();
+    const cv=new Float32Array(256); for(let i=0;i<256;i++){const x=i/128-1; cv[i]=Math.tanh(x*5);}
+    ws.curve=cv;
+    // sweeping bandpass to give the screech its bite
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=2.2;
+    bp.frequency.setValueAtTime(1600,t);
+    bp.frequency.exponentialRampToValueAtTime(2600,t+0.18);
+    bp.frequency.exponentialRampToValueAtTime(900,t+dur);
+    ws.connect(bp); bp.connect(out);
+    // high screech oscillators with pitch envelope + fast raspy tremolo
+    [1,1.5,2.02].forEach((mult,i)=>{
+      const o=this.ctx.createOscillator(); o.type='sawtooth';
+      const base=900*mult;
+      o.frequency.setValueAtTime(base*0.7,t);
+      o.frequency.exponentialRampToValueAtTime(base*1.25,t+0.12); // sharp rise
+      o.frequency.exponentialRampToValueAtTime(base*0.9,t+0.5);
+      o.frequency.exponentialRampToValueAtTime(base*0.45,t+dur); // falling wail
+      // raspy vibrato
+      const lfo=this.ctx.createOscillator(); lfo.type='sawtooth'; lfo.frequency.value=34+i*9;
+      const lg=this.ctx.createGain(); lg.gain.value=base*0.18;
+      lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t+dur);
+      const og=this.ctx.createGain(); og.gain.value=i===2?0.25:0.5;
+      o.connect(og); og.connect(ws); o.start(t); o.stop(t+dur);
+    });
+    // airy screech noise on top
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(dur);
+    const nb=this.ctx.createBiquadFilter(); nb.type='bandpass'; nb.Q.value=1.4;
+    nb.frequency.setValueAtTime(3000,t); nb.frequency.exponentialRampToValueAtTime(1500,t+dur);
+    const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.5,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    // tremolo on the noise for the "raa-a-a-ah" texture
+    const trem=this.ctx.createOscillator(); trem.type='sine'; trem.frequency.value=18;
+    const tg=this.ctx.createGain(); tg.gain.value=0.35; trem.connect(tg); tg.connect(ng.gain); trem.start(t); trem.stop(t+dur);
+    src.connect(nb); nb.connect(ng); ng.connect(out); src.start(t); src.stop(t+dur);
+    // low guttural thump underneath for body
+    const lo=this.ctx.createOscillator(); lo.type='square';
+    lo.frequency.setValueAtTime(140,t); lo.frequency.exponentialRampToValueAtTime(55,t+0.5);
+    const log=this.ctx.createGain(); log.gain.setValueAtTime(0.4,t); log.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+    lo.connect(log); log.connect(this.master); lo.start(t); lo.stop(t+0.6);
+  },
   // ---- card pickup ----
   pickup(){
     if(!this.ctx||this.muted) return;
@@ -394,7 +443,7 @@ function showOverlay(html,label){
 
 function die(){
   state='scare'; scareT=0.95; shake=26;
-  SFX.roar(true); SFX.stopAmbient();
+  SFX.raptorScream(); SFX.stopAmbient();
   for(let i=0;i<10;i++) bloodSplats.push({x:player.x+(rng()*40-20),y:player.y+(rng()*40-20),r:6+rng()*14});
 }
 
