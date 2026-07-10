@@ -52,36 +52,53 @@
   }
   button:hover { box-shadow:0 0 30px rgba(200,20,0,0.7); }
   button:active { transform:translateY(2px); }
-  #mute, #throwbtn {
+  #mute, #throwbtn, #padtoggle {
     margin:0; padding:2px 8px; font-size:15px; line-height:1;
     background:#1a0f0c; color:#c9d2c0; border:1px solid #3a2420; border-radius:6px;
     box-shadow:none; letter-spacing:0; cursor:pointer;
   }
-  #mute:hover, #throwbtn:hover { box-shadow:0 0 10px rgba(150,10,0,0.5); }
+  #mute:hover, #throwbtn:hover, #padtoggle:hover { box-shadow:0 0 10px rgba(150,10,0,0.5); }
   /* ---- mobile touch controls ---- */
   #touchpad { display:none; margin-top:14px; padding:0 10px; justify-content:space-between; align-items:center; user-select:none; -webkit-user-select:none; }
-  #dpad { display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:7px;
-    padding:8px; border-radius:22px;
-    background:rgba(10,16,8,0.4);
-    box-shadow:0 3px 8px rgba(0,0,0,0.4) inset;
+  /* unified cross: 4 arms + center cell share one molded surface, border only on the outline */
+  #dpad { display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(3,56px);
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
+  .dbtn, #dhub {
+    border:1px solid #33471f;
+    /* one 168px gradient spread across the 5 cells so the cross reads as a single molded piece */
+    background-image:
+      radial-gradient(150px 150px at 84px 62px, rgba(140,190,95,0.08), transparent 65%),
+      radial-gradient(125px 125px at 84px 84px, #212f15 0%, #16210d 50%, #0c1306 100%);
+    background-size:168px 168px; background-repeat:no-repeat;
   }
   .dbtn {
-    border:1px solid #26361c; border-radius:16px; color:#7f9a68; font-size:23px; font-weight:bold;
+    margin:0; padding:0; letter-spacing:0;
+    color:#93ac7c; font-size:20px; text-shadow:0 1px 1px rgba(0,0,0,0.7);
     display:flex; align-items:center; justify-content:center; touch-action:none; cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    background:linear-gradient(180deg,#151f0f,#0a1006);
-    text-shadow:none;
-    box-shadow:0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(80,110,55,0.10) inset;
-    transition:transform .06s ease, box-shadow .06s ease, background .1s ease, color .1s ease;
+    -webkit-tap-highlight-color:transparent; transition:color .08s ease;
   }
-  .dbtn:active {
-    transform:translateY(1px); color:#c0d8a0;
-    background:linear-gradient(180deg,#243418,#131f0d);
-    box-shadow:0 1px 2px rgba(0,0,0,0.55), 0 0 6px rgba(90,140,60,0.25) inset;
+  #dpad .dbtn:active {
+    transform:none;
+    background:#0e1707; color:#e2f4c6; text-shadow:0 0 8px rgba(150,220,100,0.45);
+    box-shadow:0 3px 6px rgba(0,0,0,0.6) inset;
   }
-  #dup{grid-column:2;grid-row:1;} #dleft{grid-column:1;grid-row:2;} #dright{grid-column:3;grid-row:2;} #ddown{grid-column:2;grid-row:3;}
-  #dhub{ grid-column:2; grid-row:2; align-self:center; justify-self:center; width:14px; height:14px; border-radius:50%;
-    background:radial-gradient(circle at 40% 35%, #3d5824, #1a2810); box-shadow:0 1px 2px rgba(0,0,0,0.6) inset; }
+  #dup   { grid-column:2; grid-row:1; border-bottom:none; border-radius:16px 16px 0 0;
+    background-position:-56px 0;
+    box-shadow:0 2px 2px -1px rgba(160,200,110,0.22) inset; }
+  #ddown { grid-column:2; grid-row:3; border-top:none; border-radius:0 0 16px 16px;
+    background-position:-56px -112px;
+    box-shadow:0 -3px 4px -2px rgba(0,0,0,0.6) inset; }
+  #dleft { grid-column:1; grid-row:2; border-right:none; border-radius:16px 0 0 16px;
+    background-position:0 -56px;
+    box-shadow:2px 0 2px -1px rgba(160,200,110,0.10) inset; }
+  #dright{ grid-column:3; grid-row:2; border-left:none; border-radius:0 16px 16px 0;
+    background-position:-112px -56px;
+    box-shadow:-2px 0 3px -1px rgba(0,0,0,0.35) inset; }
+  #dhub  { grid-column:2; grid-row:2; border:none; background-position:-56px -56px; position:relative; }
+  #dhub::after { content:""; position:absolute; inset:0; margin:auto; width:16px; height:16px;
+    border-radius:50%;
+    background:radial-gradient(circle at 40% 32%, #0b1206, #1a2810);
+    box-shadow:0 1px 2px rgba(0,0,0,0.7) inset, 0 1px 0 rgba(150,190,110,0.15); }
 
   #flareBtn {
     position:relative; width:96px; height:96px; border-radius:50%; border:1px solid #5a1a10; color:#e8c4b0;
@@ -102,7 +119,8 @@
     font-size:12px; font-weight:bold; letter-spacing:0; display:flex; align-items:center; justify-content:center;
     box-shadow:0 1px 3px rgba(0,0,0,0.6);
   }
-  @media (pointer:coarse) { #touchpad { display:flex; } #throwbtn { display:none; } }
+  #touchpad.forced { display:flex; }
+  @media (pointer:coarse) { #touchpad { display:flex; } #throwbtn, #padtoggle { display:none; } }
   .keys { font-size:13px; color:#5a6852; margin-top:16px; }
   .keys kbd { background:#1a1210; border:1px solid #3a2420; border-radius:4px; padding:2px 7px; margin:0 2px; font-family:monospace; }
 </style>
@@ -116,6 +134,7 @@
     <div class="item">⭐ <b id="score">0</b></div>
     <div class="item">🔥 <b id="lures">3</b></div>
     <div class="item"><button id="throwbtn" title="Lancer un flare (Espace)">🔥</button></div>
+    <div class="item"><button id="padtoggle" title="Afficher/masquer le pad tactile">🎮</button></div>
     <div class="item"><button id="mute" title="Son on/off">🔊</button></div>
   </div>
   <canvas id="game" width="760" height="520"></canvas>
@@ -355,6 +374,9 @@ const SFX = {
 };
 el.mute.addEventListener('click',()=>SFX.toggleMute());
 el.throwbtn.addEventListener('click',()=>throwLure());
+document.getElementById('padtoggle').addEventListener('click',()=>{
+  document.getElementById('touchpad').classList.toggle('forced');
+});
 
 // on-screen D-pad (mobile)
 function bindDir(id,key){
