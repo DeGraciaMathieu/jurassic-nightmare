@@ -100,6 +100,19 @@
     background:radial-gradient(circle at 40% 32%, #0b1206, #1a2810);
     box-shadow:0 1px 2px rgba(0,0,0,0.7) inset, 0 1px 0 rgba(150,190,110,0.15); }
 
+  #sprintBtn {
+    position:relative; width:72px; height:72px; border-radius:50%; border:1px solid #2f4a2a; color:#bcd0ae;
+    font-size:10px; font-weight:800; letter-spacing:1px; line-height:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    touch-action:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    background:radial-gradient(circle at 40% 32%, #2c4220 0%, #1b2c12 48%, #0d1607 100%);
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);
+    box-shadow:0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(140,190,110,0.12) inset, 0 -6px 12px rgba(0,20,0,0.4) inset;
+    transition:transform .06s ease, box-shadow .06s ease;
+  }
+  #sprintBtn:active { transform:scale(0.94);
+    box-shadow:0 1px 4px rgba(0,0,0,0.6), 0 0 12px rgba(120,190,80,0.35), 0 -5px 10px rgba(0,20,0,0.5) inset; }
+  #sprintBtn .em { font-size:19px; opacity:0.9; }
   #flareBtn {
     position:relative; width:96px; height:96px; border-radius:50%; border:1px solid #5a1a10; color:#e8c4b0;
     font-size:12px; font-weight:800; letter-spacing:2px; line-height:1;
@@ -143,7 +156,7 @@
     <p id="ovtext">La nuit est tombée sur le parc. Le courant a sauté. Perdu dans un dédale de couloirs, vous n'avez qu'une lampe torche mourante. Trouvez les <b>cartes d'accès</b> 🎫 puis rejoignez la <b>sortie</b> 🚪... avant que <b>ça</b> vous trouve dans le noir.</p>
     <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs et filer.</p>
     <p style="color:#c0472e;font-size:13px;">⚠️ Vous ne courez pas plus vite que lui. Cachez-vous, ruser, survivez.</p>
-    <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
+    <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Sprint : <kbd>Shift</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
     <button id="btn">ENTRER DANS LE NOIR</button>
   </div>
   <div id="touchpad">
@@ -154,6 +167,7 @@
       <button class="dbtn" id="dright" aria-label="droite">▶</button>
       <button class="dbtn" id="ddown" aria-label="bas">▼</button>
     </div>
+    <button id="sprintBtn" aria-label="sprinter"><span class="em">💨</span>SPRINT</button>
     <button id="flareBtn" aria-label="lancer un flare"><span class="em">🔥</span>FLARE<span class="badge" id="flareCount">3</span></button>
   </div>
 </div>
@@ -396,8 +410,17 @@ bindDir('dup','arrowup'); bindDir('ddown','arrowdown');
 bindDir('dleft','arrowleft'); bindDir('dright','arrowright');
 const flareBtn=document.getElementById('flareBtn');
 if(flareBtn) flareBtn.addEventListener('pointerdown',e=>{ e.preventDefault(); SFX.init(); throwLure(); });
+const sprintBtn=document.getElementById('sprintBtn');
+if(sprintBtn){
+  const on=e=>{ e.preventDefault(); keys['sprint']=true; };
+  const off=()=>{ keys['sprint']=false; };
+  sprintBtn.addEventListener('pointerdown',on);
+  sprintBtn.addEventListener('pointerup',off);
+  sprintBtn.addEventListener('pointercancel',off);
+  sprintBtn.addEventListener('pointerleave',off);
+}
 // safety: release all directions if a pointer is lifted anywhere
-window.addEventListener('pointerup',()=>{ keys['arrowup']=keys['arrowdown']=keys['arrowleft']=keys['arrowright']=false; });
+window.addEventListener('pointerup',()=>{ keys['arrowup']=keys['arrowdown']=keys['arrowleft']=keys['arrowright']=keys['sprint']=false; });
 
 // ---- per-level tuning ----
 const LEVELS = [
@@ -445,7 +468,9 @@ const LURE_HEAR=320, LURE_LIFE=5, HIDE_SIGHT=54;
 const keys={};
 
 const PR=11, RR=15, CR=9;
-const PLAYER_SPEED=138;
+const PLAYER_SPEED=138, SPRINT_SPEED=210; // sprint outruns the fastest rex (188)
+const STAMINA_MAX=2.6, STAMINA_REGEN=0.5;
+let stamina=STAMINA_MAX, exhausted=false;
 
 function cellCenter(c,r){ return { x:(c+0.5)*TILE, y:(r+0.5)*TILE }; }
 function isWall(c,r){ return c<0||r<0||c>=COLS||r>=ROWS||grid[r][c]===1; }
@@ -481,6 +506,7 @@ function loadLevel(i){
   for(let k=0;k<Math.min(18,gpool.length);k++) grassSet.add(gpool[k].c+','+gpool[k].r);
 
   lures=[]; lureCount=3; throwCD=0;
+  stamina=STAMINA_MAX; exhausted=false;
   visionR=cfg.vision; levelTime=0; bloodSplats=[]; shake=0;
   updateHUD();
 }
@@ -627,8 +653,15 @@ function update(dt){
   if(keys['a']||keys['arrowleft'])vx--; if(keys['d']||keys['arrowright'])vx++;
   if(touchTarget){ const dx=touchTarget.x-player.x,dy=touchTarget.y-player.y,d=Math.hypot(dx,dy); if(d>4){vx=dx/d;vy=dy/d;} }
   const l=Math.hypot(vx,vy);
+  // sprint: speed burst that drains stamina; once emptied you must recover before sprinting again
+  const sprinting = (keys['shift']||keys['sprint']) && l>0 && !exhausted && stamina>0;
+  if(sprinting) stamina=Math.max(0,stamina-dt);
+  else stamina=Math.min(STAMINA_MAX,stamina+STAMINA_REGEN*dt);
+  if(stamina<=0) exhausted=true;
+  else if(exhausted && stamina>=STAMINA_MAX*0.35) exhausted=false;
   if(l>0){ vx/=l; vy/=l; player.fx=vx; player.fy=vy;
-    const mx=vx*PLAYER_SPEED*dt, my=vy*PLAYER_SPEED*dt;
+    const spd=sprinting?SPRINT_SPEED:PLAYER_SPEED;
+    const mx=vx*spd*dt, my=vy*spd*dt;
     if(mx!==0) movePlayerAxis(mx,0);
     if(my!==0) movePlayerAxis(0,my);
   }
@@ -941,6 +974,17 @@ function drawJumpscare(){
   ctx.restore();
 }
 
+function drawStamina(){
+  const x=12, y=H-20, w=130, h=8, p=stamina/STAMINA_MAX;
+  ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-3,y-3,w+6,h+6);
+  ctx.strokeStyle='rgba(150,160,140,0.35)'; ctx.lineWidth=1; ctx.strokeRect(x-1.5,y-1.5,w+3,h+3);
+  const col = exhausted ? (Math.sin(performance.now()/90)>0?'#8a2015':'#5a150d')
+            : p>0.5 ? '#7fae4e' : p>0.25 ? '#c9a13a' : '#c05a2e';
+  ctx.fillStyle=col; ctx.fillRect(x,y,w*p,h);
+  ctx.fillStyle='rgba(230,240,220,0.55)'; ctx.font='bold 9px Trebuchet MS'; ctx.textAlign='left';
+  ctx.fillText('ENDURANCE',x,y-5);
+}
+
 function render(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,W,H);
@@ -953,7 +997,7 @@ function render(){
   if(state==='play'||state==='dead'||state==='levelclear'||state==='win'){ drawDarkness(); drawHeartbeat(); }
 
   // level name (dim)
-  if(state==='play'){ ctx.fillStyle='rgba(180,70,45,0.5)'; ctx.font='italic 12px Trebuchet MS'; ctx.textAlign='left'; ctx.fillText(cfg.name,12,20); }
+  if(state==='play'){ ctx.fillStyle='rgba(180,70,45,0.5)'; ctx.font='italic 12px Trebuchet MS'; ctx.textAlign='left'; ctx.fillText(cfg.name,12,20); drawStamina(); }
   ctx.restore();
 }
 
