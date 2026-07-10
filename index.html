@@ -162,6 +162,10 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+// offscreen darkness layer so light sources can punch real holes in it
+const darkCanvas = document.createElement('canvas');
+darkCanvas.width = W; darkCanvas.height = H;
+const dctx = darkCanvas.getContext('2d');
 
 const TILE = 40, COLS = 19, ROWS = 13; // 760x520
 
@@ -848,13 +852,28 @@ function drawDarkness(){
   const dip = Math.random()<0.04 ? 0.6 : 1;
   const vR = visionR * (0.94 + flick*0.05) * dip;
   const px=player.x, py=player.y;
+  // build the darkness on the offscreen layer so flares can punch holes in it
+  dctx.clearRect(0,0,W,H);
   // directional bias: stretch light slightly toward facing
-  const grad=ctx.createRadialGradient(px+player.fx*22,py+player.fy*22,vR*0.28, px,py,vR);
+  const grad=dctx.createRadialGradient(px+player.fx*22,py+player.fy*22,vR*0.28, px,py,vR);
   grad.addColorStop(0,'rgba(0,0,0,0)');
   grad.addColorStop(0.55,'rgba(2,3,2,0.25)');
   grad.addColorStop(0.85,'rgba(1,2,1,0.8)');
   grad.addColorStop(1,'rgba(0,1,0,0.985)');
-  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  dctx.fillStyle=grad; dctx.fillRect(0,0,W,H);
+  // flares carve real light out of the darkness, revealing the map around them
+  dctx.globalCompositeOperation='destination-out';
+  for(const L of lures){
+    const t=performance.now()/1000, f=0.84+0.16*Math.sin(t*26+L.x);
+    const lr=(L.flying?38:100*Math.min(1,L.life/0.9))*f;
+    const hole=dctx.createRadialGradient(L.x,L.y,0,L.x,L.y,lr);
+    hole.addColorStop(0,'rgba(0,0,0,1)');
+    hole.addColorStop(0.55,'rgba(0,0,0,0.85)');
+    hole.addColorStop(1,'rgba(0,0,0,0)');
+    dctx.fillStyle=hole; dctx.beginPath(); dctx.arc(L.x,L.y,lr,0,7); dctx.fill();
+  }
+  dctx.globalCompositeOperation='source-over';
+  ctx.drawImage(darkCanvas,0,0);
 
   // glowing red eyes of rexes lurking just beyond the light
   for(const rex of rexes){
@@ -872,16 +891,16 @@ function drawDarkness(){
     }
   }
 
-  // burning flares glow through the darkness like beacons
+  // warm red tint over the area each flare reveals
   for(const L of lures){
     if(L.flying) continue;
     const t=performance.now()/1000, flick2=0.7+0.3*Math.sin(t*28);
     ctx.save(); ctx.globalCompositeOperation='lighter';
-    const rg=ctx.createRadialGradient(L.x,L.y,2,L.x,L.y,70*flick2);
-    rg.addColorStop(0,'rgba(255,90,40,0.9)');
-    rg.addColorStop(0.4,'rgba(220,30,10,0.35)');
+    const rg=ctx.createRadialGradient(L.x,L.y,2,L.x,L.y,80*flick2);
+    rg.addColorStop(0,'rgba(255,90,40,0.5)');
+    rg.addColorStop(0.4,'rgba(220,30,10,0.22)');
     rg.addColorStop(1,'rgba(120,0,0,0)');
-    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(L.x,L.y,70*flick2,0,7); ctx.fill();
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(L.x,L.y,80*flick2,0,7); ctx.fill();
     ctx.restore();
   }
 }
