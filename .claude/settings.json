@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/run-tests.sh\"",
+            "timeout": 120,
+            "statusMessage": "Tests (npm test)…"
+          },
+          {
+            "type": "agent",
+            "prompt": "Tu es le vérificateur de cohérence documentaire du projet Jurassic Nightmare (jeu canvas 2D, deux couches : src/ logique pure, render/ rendu). Vérifie que la doc vivante reste fidèle au code.\n\nDoc vivante à vérifier : 1) le texte statique de l'overlay du menu dans index.html — les règles du jeu montrées au joueur (cartes d'accès, sortie, hautes herbes qui cachent, flare rouge qui attire, portes qui s'ouvrent pour le joueur mais que le rex doit défoncer, avertissement « Vous ne courez pas plus vite que lui ») et la légende des touches (WASD/flèches, Shift = sprint, Espace = leurre) ; 2) CLAUDE.md à la racine — stack, commandes npm, conventions, description de l'architecture ; 3) les tables des .claude/skills/*/SKILL.md qui mappent concepts → fichiers/fonctions/constantes.\n\nÀ ignorer (rempli dynamiquement à l'exécution, jamais une désynchro) : les valeurs du HUD (#lvl, #cards, #time, #score, #lures, badge #flareCount) mises à jour par render/hud.js, et les écrans de fin générés par render/html.js.\n\nProcédure : lance `git diff HEAD -- src render index.html CLAUDE.md .claude/skills`. Si le diff est vide, réponds accept. Sinon, cherche les contradictions code → doc : mécanique modifiée qui rend le texte de l'overlay faux, touche ajoutée ou retirée absente de la légende, module/fonction/constante renommé encore cité dans CLAUDE.md ou une table de skill, commande npm changée.\n\nRègle de sortie stricte : réponds exactement accept si rien n'a changé ou si la doc reflète fidèlement les changements. Sinon réponds block en listant précisément chaque passage périmé (fichier + citation exacte) et la correction attendue.",
+            "model": "claude-sonnet-4-6",
+            "timeout": 120,
+            "statusMessage": "Vérification synchro doc vivante…"
+          }
+        ]
+      }
+    ]
+  }
+}
