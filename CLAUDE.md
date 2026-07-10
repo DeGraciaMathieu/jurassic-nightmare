@@ -1,93 +1,58 @@
 # Jurassic Nightmare
 
-Jeu d'infiltration/survie en canvas 2D. ES modules natifs (ES2022), sans build ni
-bundler, sans dépendance.
+Jeu d'infiltration/survie en canvas 2D : ramasser des cartes d'accès et fuir un labyrinthe plongé dans le noir sans se faire attraper par les rexes.
 
-## Règle d'or
+## Stack
 
-Si un changement décide « **ce qui se passe** », il va dans `src/` et se teste.
-S'il décide « **comment ça s'affiche** », il va dans `render/`.
+- JavaScript vanilla **ES2022, ES modules natifs** — zéro dépendance, pas de build ni bundler.
+- Canvas 2D + WebAudio (SFX synthétisés, aucun asset), HTML + `styles.css`.
+- Node ≥ 18 pour l'outillage.
 
-## Architecture en deux couches
-
-- **`src/` — logique métier pure.** Aucun accès au DOM, à `window`, au canvas ni
-  à l'audio. Les fonctions reçoivent l'objet `state` en argument et le modifient ;
-  elles ne rendent rien. C'est la couche testée.
-- **`render/` — rendu & interactions.** Importe `src/`, lit l'état chaque frame,
-  s'abonne au bus pour les effets ponctuels. Aucune logique métier.
-
-La dépendance est unidirectionnelle : `render/` importe `src/`, jamais l'inverse.
-
-## L'état
-
-`createApp({ rng })` (`src/app.js`) crée et renvoie l'objet `state` complet
-(données du domaine + `bus` + `rng`). Aucun état global de module — tout vit dans
-cet objet, ce qui rend chaque test indépendant.
-
-## Modules
-
-### `src/`
-
-| Module | Rôle |
+| Commande | Rôle |
 |---|---|
-| `config.js` | Constantes (grille, niveaux, vitesses, endurance, portes, leurres) — ne dépend de rien |
-| `events.js` | `createBus()` : `on`/`emit` |
-| `rng.js` | `mulberry32` (PRNG seedable), `shuffle(rng, arr)` |
-| `grid.js` | Raisonnement en cases : `genMaze`, `isWall`, `cellCenter`, `openCells`, `cellDist`, `bfsNext` |
-| `physics.js` | Raisonnement en pixels : `circleHitsWalls`, `losBlocked`, `movePlayerAxis` |
-| `level.js` | `loadLevel(state, i)` : génération + placement cartes/rexes/herbes/portes ; `cardsLeft` |
-| `player.js` | Déplacement, sprint/endurance, dissimulation, `throwLure`, ramassage de cartes |
-| `lures.js` | Vol et atterrissage des flares, `attractRexes` |
-| `doors.js` | Ouverture/fermeture des portes, `doorSolid`, `doorBlocksRex` |
-| `rex.js` | IA complète : vision, poursuite, leurre, errance, battage de portes, capture |
-| `app.js` | `createApp`, `update(state, dt)` (orchestration), machine à états (`startGame`, `nextLevel`, `die`) |
+| `npm test` | `node --test` — tests macro dans `test/*.test.js` |
+| `npm run dev` | `npx serve .` — **obligatoire** : les ES modules ne se chargent pas en `file://` |
 
-### `render/`
+Pas de lint/format configuré (choix zéro-dépendance assumé) : suivre le style en place — indentation 2 espaces, code compact, une responsabilité par module.
 
-| Module | Rôle |
+## Conventions de code (non négociables)
+
+**Règle d'or : si un changement décide « ce qui se passe », il va dans `src/` et se teste. S'il décide « comment ça s'affiche », il va dans `render/`.**
+
+- Dépendance unidirectionnelle : `render/` importe `src/` — **jamais l'inverse**.
+- **Jamais** de DOM, `window`, canvas, `performance` ou WebAudio dans `src/`.
+- **Jamais** de `Math.random()` dans `src/` : tout aléa passe par `state.rng` (mulberry32 injecté) ; le reseed d'une partie se fait uniquement via `startGame(state, seed)`.
+- **Jamais** d'état global de module : tout vit dans l'objet `state` créé par `createApp({rng})` (`src/app.js`).
+- **Jamais** d'appel direct de la logique vers le rendu : `src/` émet sur `state.bus`, `render/main.js` s'abonne.
+- Les effets purement visuels (screen shake, éclaboussures) vivent côté `render/` (objet `fx`), pas dans `state`.
+- Constantes de gameplay dans `src/config.js` uniquement — pas de valeur magique dupliquée.
+- Nouveau champ d'état : valeur par défaut dans `createApp` **et** reset dans `loadLevel`.
+- Langues : code et commentaires en **anglais** ; doc, tests et textes du jeu en **français** ; messages de commit en **anglais**.
+
+## Conventions de domaine
+
+- Grille 19×13 de tuiles de 40 px (canvas 760×520) ; `grid[r][c]` avec `0` = ouvert, `1` = mur ; clés de `Set`/`Map` au format `"c,r"` ; positions d'entités en pixels (centres de cases).
+- Terminologie : *rex* (prédateur), *lure*/*flare* (leurre), *grass* (herbes hautes), secteur (niveau), `chasing`/`alert`/`investigating` (états IA), `status ∈ menu|play|scare|dead|levelclear|win`.
+- La **doc vivante** du joueur est le texte statique de l'overlay d'`index.html` (règles du jeu + légende des touches) : toute mécanique modifiée doit y rester exacte.
+
+## Comportement (process)
+
+- Ne **jamais** déclarer une tâche terminée sans avoir lancé `npm test` et vérifié qu'ils passent.
+- Si une approche échoue après **2 tentatives**, reprendre le plan avant de continuer — ne pas s'acharner sur la même piste.
+- Tout changement de comportement de `src/` s'accompagne d'un test **macro** (comportement observable, jamais un détail d'implémentation).
+- Si le périmètre change (règles du jeu, architecture, conventions) : synchroniser l'overlay d'`index.html`, ce CLAUDE.md et les skills concernés.
+
+## Skills disponibles
+
+| Skill | Périmètre |
 |---|---|
-| `main.js` | Bootstrap : `createApp`, câblage bus→audio/effets, boucle `requestAnimationFrame` |
-| `draw.js` | Tout le dessin canvas (monde, rexes, obscurité, jumpscare, endurance) |
-| `gfx.js` | **PUR** : calculs graphiques (flicker, rayons de lumière, alphas, couleurs, mapping tactile) |
-| `html.js` | **PUR** : fragments HTML des écrans d'overlay |
-| `hud.js` | Mise à jour DOM du HUD (chaque frame, depuis l'état) + overlay |
-| `audio.js` | Moteur SFX synthétisé (WebAudio), déclenché par le bus |
-| `input.js` | Clavier, tactile, d-pad, boutons ; écrit `state.keys` et appelle les actions de `src/` |
+| `architecture` | Carte module → rôle → dépendances, objet `state`, événements du bus, où placer du nouveau code |
+| `testing` | `npm test`, philosophie macro, patterns `arena`/`step`, mapping test → périmètre, pièges |
+| `level-generation` | Labyrinthe, difficulté des secteurs (`LEVELS`), placement des entités |
+| `predator-ai` | IA des rexes (vision, poursuite, leurres, errance) et portes de sécurité |
+| `player-mechanics` | Déplacement, sprint/endurance, dissimulation, flares, cartes |
+| `rendering` | Canvas, obscurité/lumières, SFX, HUD/overlays, entrées, câblage du bus |
+| `feature` | Workflow d'implémentation : comprendre → implémenter → tester → synchroniser → résumer |
+| `prd` | Spécifier une feature (exploration technique + décisions produit) sans l'implémenter |
 
-## Bus d'événements (src → render)
-
-La logique n'appelle jamais le rendu : elle émet, le rendu s'abonne (`main.js`).
-
-| Événement | Payload | Effets côté rendu |
-|---|---|---|
-| `rex:roar` | — | rugissement + screen shake |
-| `door:hit` | — | son d'impact |
-| `card:picked` | — | son de ramassage |
-| `lure:thrown` | — | son de lancer |
-| `heartbeat` | intensité 0..1 | battement de cœur |
-| `player:died` | `{x, y}` | cri, arrêt d'ambiance, shake, éclaboussures |
-| `game:over` | `{level, score}` | overlay de défaite |
-| `level:cleared` | `{level, time, bonus, score}` | carillon + overlay de transition |
-| `game:won` | `{score}` | carillon + overlay de victoire |
-
-Le screen shake et les éclaboussures de sang vivent côté `render/` (objet `fx`
-dans `main.js`) : purement visuels, ils sont pilotés par ces événements.
-
-## Aléa
-
-Jamais `Math.random()` dans `src/` — tout aléa passe par `state.rng`, injecté à
-la création, pour des tests déterministes. Le reseed d'une partie se fait via
-`startGame(state, seed)` ; le seed est fourni par `render/` au clic.
-
-## Tests
-
-- `npm test` — `node --test`, fichiers dans `test/*.test.js`, zéro dépendance.
-- Tests **macro** sur les comportements fonctionnels de `src/` (le rex chasse,
-  la porte cède, le sprint épuise…), pas sur les détails d'implémentation.
-- Pas de fichier utilitaire dans `test/` : Node y traiterait tout `.js` comme un
-  fichier de test ; les helpers (`arena`, `step`…) restent locaux à chaque fichier.
-
-## Lancer le jeu
-
-- `npm run dev` (`npx serve .`) puis ouvrir l'URL affichée — les ES modules ne se
-  chargent pas en `file://`.
+Commands : `/review` (revue complète du diff), `/check-conventions` (conventions + synchro doc), `/check-tests` (couverture + tests manquants avec validation).
