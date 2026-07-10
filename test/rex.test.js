@@ -1,0 +1,93 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { COLS, ROWS, TILE } from '../src/config.js';
+import { mulberry32 } from '../src/rng.js';
+import { createApp, update } from '../src/app.js';
+import { loadLevel } from '../src/level.js';
+import { throwLure } from '../src/player.js';
+import { attractRexes } from '../src/lures.js';
+
+function arena(seed=1){
+  const state = createApp({ rng: mulberry32(seed) });
+  loadLevel(state,0);
+  state.status='play';
+  state.grid = Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>(r===0||c===0||r===ROWS-1||c===COLS-1)?1:0));
+  state.rexes=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set();
+  state.player.x=(COLS/2)*TILE; state.player.y=(ROWS/2)*TILE; // cellule (9,6)
+  return state;
+}
+function step(state,secs,dt=1/60){ for(let t=0;t<secs-1e-9;t+=dt) update(state,dt); }
+function addRex(state,c,r){
+  const rex={ x:(c+0.5)*TILE, y:(r+0.5)*TILE, c, r, tc:c, tr:r,
+              dir:1, chasing:false, alert:0, seenC:c, seenR:r, prevC:c, prevR:r,
+              roarCD:0, lureTimer:0, lureX:null, lureY:null, hitCD:0 };
+  state.rexes.push(rex);
+  return rex;
+}
+
+test('un rex qui voit le joueur rugit et le prend en chasse', () => {
+  const state = arena();
+  let roars=0; state.bus.on('rex:roar',()=>roars++);
+  const rex = addRex(state,11,6); // à 80 px, ligne de vue dégagée
+  step(state,1/60);
+  assert.equal(rex.chasing, true);
+  assert.equal(roars, 1);
+});
+
+test('un mur coupe la ligne de vue', () => {
+  const state = arena();
+  const rex = addRex(state,11,6);
+  state.grid[6][10]=1; // mur entre le rex et le joueur
+  step(state,1/60);
+  assert.equal(rex.chasing, false);
+});
+
+test("caché dans l'herbe, le joueur devient quasi invisible", () => {
+  const state = arena();
+  state.grassSet.add('9,6'); // la cellule du joueur
+  const rex = addRex(state,11,6); // à 80 px > HIDE_SIGHT (54)
+  step(state,1/60);
+  assert.equal(rex.chasing, false);
+});
+
+test('un flare qui atterrit détourne un rex en chasse', () => {
+  const state = arena();
+  const rex = addRex(state,11,6);
+  step(state,1/60);
+  assert.equal(rex.chasing, true);
+  attractRexes(state,{x:300,y:260,life:5}); // atterri à portée d'ouïe
+  assert.equal(rex.chasing, false);
+  assert.equal(rex.lureTimer, 5);
+  assert.equal(rex.lureX, 300);
+  assert.equal(rex.lureY, 260);
+});
+
+test('un rex hors de vue investigue un flare tombé à proximité', () => {
+  const state = arena();
+  const rex = addRex(state,15,11); // loin du joueur, hors de portée de vue
+  state.player.fx=0; state.player.fy=1;
+  throwLure(state); // part vers le bas et retombe à mi-chemin du rex
+  step(state,1);
+  assert.equal(state.lures.length, 1);
+  assert.equal(state.lures[0].flying, false);
+  assert.ok(rex.lureTimer > 0, 'il a entendu le flare');
+  const L = state.lures[0];
+  const d0 = Math.hypot(rex.x-L.x, rex.y-L.y);
+  step(state,1);
+  const d1 = Math.hypot(rex.x-L.x, rex.y-L.y);
+  assert.ok(d1 < d0, 'il marche vers le flare');
+});
+
+test('un rex au contact tue le joueur', () => {
+  const state = arena();
+  let died=false, over=null;
+  state.bus.on('player:died',()=>died=true);
+  state.bus.on('game:over',p=>over=p);
+  addRex(state,9,6); // sur la cellule du joueur
+  step(state,1/60);
+  assert.equal(state.status, 'scare');
+  assert.equal(died, true);
+  step(state,1); // le jumpscare se termine
+  assert.equal(state.status, 'dead');
+  assert.equal(over.level, 1);
+});
