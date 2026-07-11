@@ -122,14 +122,14 @@ test('un craquement trop lointain reste inaudible', () => {
 
 test('un rex au contact tue le joueur', () => {
   const state = arena();
-  let died=false, over=null;
+  let died=false, lost=null;
   state.bus.on('player:died',()=>died=true);
-  state.bus.on('game:over',p=>over=p);
+  state.bus.on('life:lost',p=>lost=p);
   addRex(state,9,6); // sur la cellule du joueur
   step(state,1/60);
   assert.equal(state.status, 'scare');
   assert.equal(died, true);
-  step(state,1); // le jumpscare se termine
-  assert.equal(state.status, 'dead');
-  assert.equal(over.level, 1);
+  step(state,1); // le jumpscare se termine : une vie est consommée
+  assert.equal(state.status, 'lifelost');
+  assert.equal(lost.lives, 2);
 });

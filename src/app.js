@@ -1,4 +1,4 @@
-import { PR, LEVELS, STAMINA_MAX } from './config.js';
+import { PR, LEVELS, STAMINA_MAX, LIVES, LURE_COUNT } from './config.js';
 import { createBus } from './events.js';
 import { mulberry32 } from './rng.js';
 import { loadLevel, cardsLeft } from './level.js';
@@ -11,11 +11,11 @@ import { updateRaptors } from './raptor.js';
 
 export function createApp({ rng }){
   return {
-    status:'menu', // menu | play | scare | dead | levelclear | win
-    levelIdx:0, score:0, levelTime:0,
+    status:'menu', // menu | play | scare | lifelost | dead | levelclear | win
+    levelIdx:0, score:0, levelTime:0, lives:LIVES,
     grid:null, player:null, exit:null, cards:[], rexes:[], dilos:[], raptors:[], cfg:null,
     visionR:160, scareT:0, hbTimer:0, venoms:[], poisonT:0,
-    lures:[], lureCount:3, grassSet:new Set(), throwCD:0, decor:[],
+    lures:[], lureCount:LURE_COUNT, grassSet:new Set(), throwCD:0, decor:[],
     doors:[], doorMap:new Map(),
     stamina:STAMINA_MAX, exhausted:false,
     keys:{}, touchTarget:null,
@@ -24,8 +24,15 @@ export function createApp({ rng }){
 }
 
 export function startGame(state,seed){
-  if(state.status==='dead'||state.status==='win'){ state.score=0; state.levelIdx=0; }
+  if(state.status==='dead'||state.status==='win'){ state.score=0; state.levelIdx=0; state.lives=LIVES; }
+  state.lureCount=LURE_COUNT;
   state.rng=mulberry32(seed);
+  loadLevel(state,state.levelIdx);
+  state.status='play';
+}
+
+export function retryLevel(state){
+  state.lureCount=LURE_COUNT; // each life starts with a full flare stock
   loadLevel(state,state.levelIdx);
   state.status='play';
 }
@@ -42,8 +49,12 @@ export function die(state){
 }
 
 export function update(state,dt){
-  if(state.status==='scare'){ state.scareT-=dt; if(state.scareT<=0){ state.status='dead';
-    state.bus.emit('game:over',{level:state.levelIdx+1,score:state.score}); }
+  if(state.status==='scare'){ state.scareT-=dt; if(state.scareT<=0){
+    state.lives--;
+    if(state.lives>0){ state.status='lifelost';
+      state.bus.emit('life:lost',{lives:state.lives}); }
+    else { state.status='dead';
+      state.bus.emit('game:over',{level:state.levelIdx+1,score:state.score}); } }
     return; }
   if(state.status!=='play') return;
   state.levelTime+=dt;

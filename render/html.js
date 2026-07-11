@@ -1,5 +1,12 @@
 // pure HTML fragment builders for the overlay screens
 
+export function lifeLostOverlay(lives){
+  return {
+    html:`<span class="big lose">🦖 IL VOUS A TROUVÉ</span>Vous vous relevez dans le noir. Le secteur s'est refermé : tout est à refaire.<br>Il vous reste <b>${lives}</b> ${lives>1?'vies':'vie'} ❤️`,
+    label:'RÉESSAYER LE SECTEUR',
+  };
+}
+
 export function deathOverlay(level,score){
   return {
     html:`<span class="big lose">🦖 IL VOUS A TROUVÉ</span>Le noir s'est refermé sur vous au secteur ${level}.<br>Score final : <b>${score}</b>`,

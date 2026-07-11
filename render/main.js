@@ -5,7 +5,7 @@ import { createHud } from './hud.js';
 import { createRenderer, drawMenuHero, drawMenuMaze } from './draw.js';
 import { SFX } from './audio.js';
 import { attachInput } from './input.js';
-import { deathOverlay, winOverlay, levelClearOverlay } from './html.js';
+import { lifeLostOverlay, deathOverlay, winOverlay, levelClearOverlay } from './html.js';
 
 const canvas = document.getElementById('game');
 const els = {
@@ -13,6 +13,7 @@ const els = {
   cards: document.getElementById('cards'),
   time: document.getElementById('time'),
   score: document.getElementById('score'),
+  lives: document.getElementById('lives'),
   overlay: document.getElementById('overlay'),
   ovtext: document.getElementById('ovtext'),
   btn: document.getElementById('btn'),
@@ -44,6 +45,7 @@ state.bus.on('player:died', ({x,y})=>{
   for(let i=0;i<10;i++) fx.splats.push({x:x+(Math.random()*40-20), y:y+(Math.random()*40-20), r:6+Math.random()*14});
   SFX.raptorScream(); SFX.stopAmbient();
 });
+state.bus.on('life:lost', ({lives})=>hud.showOverlay(lifeLostOverlay(lives)));
 state.bus.on('game:over', ({level,score})=>hud.showOverlay(deathOverlay(level,score)));
 state.bus.on('level:cleared', ({level,time,bonus,score})=>{
   SFX.stopAmbient(); SFX.chime(false);

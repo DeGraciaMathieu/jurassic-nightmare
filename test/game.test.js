@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mulberry32 } from '../src/rng.js';
-import { createApp, update, startGame, nextLevel, die } from '../src/app.js';
+import { createApp, update, startGame, retryLevel, nextLevel, die } from '../src/app.js';
 
 test('startGame réinitialise une partie perdue et relance au secteur 1', () => {
   const state = createApp({ rng: mulberry32(1) });
-  state.status='dead'; state.score=730; state.levelIdx=2;
+  state.status='dead'; state.score=730; state.levelIdx=2; state.lives=0; state.lureCount=0;
   startGame(state,42);
   assert.equal(state.status, 'play');
   assert.equal(state.score, 0);
   assert.equal(state.levelIdx, 0);
+  assert.equal(state.lives, 3);
+  assert.equal(state.lureCount, 3);
   assert.equal(state.cards.length, 3);
 });
 
@@ -53,10 +55,37 @@ test('dernier secteur franchi → victoire', () => {
   assert.equal(won.score, state.score);
 });
 
-test("la mort passe par le jumpscare puis l'écran de fin", () => {
+test('perdre une vie fait rejouer le secteur : flares rechargés, score conservé', () => {
+  const state = createApp({ rng: mulberry32(1) });
+  startGame(state,1);
+  state.score=250; state.lureCount=0;
+  let lost=null, over=null;
+  state.bus.on('life:lost',p=>lost=p);
+  state.bus.on('game:over',p=>over=p);
+  die(state);
+  assert.equal(state.status, 'scare');
+  for(let t=0;t<1;t+=1/60) update(state,1/60);
+  assert.equal(state.status, 'lifelost');
+  assert.deepEqual(lost, {lives:2});
+  assert.equal(over, null);
+  retryLevel(state);
+  assert.equal(state.status, 'play');
+  assert.equal(state.levelIdx, 0);
+  assert.equal(state.score, 250);
+  assert.equal(state.lureCount, 3);
+  assert.ok(state.cards.every(c=>!c.taken));
+});
+
+test("la troisième mort passe par le jumpscare puis met fin à la partie", () => {
   const state = createApp({ rng: mulberry32(1) });
   startGame(state,1);
   let over=null; state.bus.on('game:over',p=>over=p);
+  for(let d=0;d<2;d++){
+    die(state);
+    for(let t=0;t<1;t+=1/60) update(state,1/60);
+    assert.equal(state.status, 'lifelost');
+    retryLevel(state);
+  }
   die(state);
   assert.equal(state.status, 'scare');
   for(let t=0;t<1;t+=1/60) update(state,1/60);
@@ -68,6 +97,6 @@ test('la partie tourne sans entrée utilisateur (fumée, 10 s simulées)', () =>
   const state = createApp({ rng: mulberry32(3) });
   startGame(state,3);
   for(let t=0;t<10;t+=1/60) update(state,1/60);
-  assert.ok(['play','scare','dead'].includes(state.status));
+  assert.ok(['play','scare','lifelost','dead'].includes(state.status));
   if(state.status==='play') assert.ok(Math.abs(state.levelTime-10)<0.1);
 });

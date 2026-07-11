@@ -7,6 +7,7 @@ export function createHud(els){
       els.cards.textContent=(state.cards.length-cardsLeft(state))+'/'+state.cards.length;
       els.time.textContent=state.levelTime.toFixed(1);
       els.score.textContent=state.score;
+      els.lives.textContent=state.lives;
       els.lures.textContent=state.lureCount;
       if(els.flareCount) els.flareCount.textContent=state.lureCount;
     },

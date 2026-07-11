@@ -9,6 +9,8 @@ export const LEVELS = [
   { name:"Secteur 3 — Le paddock",    rex:0, dilo:0, raptor:3, cards:5, braid:0.12, vision:118, sight:180, patrol:98,  chase:188, doors:6 },
 ];
 
+export const LIVES = 3; // losing a life replays the sector; losing the last one ends the run
+export const LURE_COUNT = 3; // flares refill at the start of each life
 export const LURE_HEAR = 320, LURE_LIFE = 5, HIDE_SIGHT = 54;
 export const SPRINT_HEAR = 220, SPRINT_ALERT = 1.5; // sprint footsteps carry, quieter than a flare
 export const CRUNCH_HEAR = 260, CRUNCH_ALERT = 1.8; // crates/skeletons crack underfoot: sharper than footsteps, quieter than a flare

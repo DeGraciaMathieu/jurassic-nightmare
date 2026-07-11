@@ -1,4 +1,4 @@
-import { startGame, nextLevel } from '../src/app.js';
+import { startGame, retryLevel, nextLevel } from '../src/app.js';
 import { throwLure } from '../src/player.js';
 import { canvasPos } from './gfx.js';
 
@@ -51,6 +51,8 @@ export function attachInput({ state, canvas, els, sfx, hud, fx }){
     sfx.init();
     if(state.status==='menu'||state.status==='dead'||state.status==='win'){
       startGame(state,(Math.random()*1e9)|0);
+    } else if(state.status==='lifelost'){
+      retryLevel(state);
     } else if(state.status==='levelclear'){
       nextLevel(state);
     } else return;
