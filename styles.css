@@ -20,6 +20,14 @@ canvas {
   border:2px solid #2a1410; border-radius:0 0 10px 10px;
   width:100%; touch-action:none;
 }
+#debug {
+  position:absolute; top:52px; right:8px; z-index:6;
+  display:flex; gap:12px; align-items:center;
+  padding:5px 10px; font-size:12px; color:#d8b8f0;
+  background:rgba(24,10,34,0.88); border:1px solid #8a3bc8; border-radius:6px;
+}
+#debug[hidden] { display:none; }
+#debug label { display:flex; gap:5px; align-items:center; }
 #overlay {
   position:absolute; inset:0;
   display:flex; flex-direction:column; align-items:center; justify-content:center;

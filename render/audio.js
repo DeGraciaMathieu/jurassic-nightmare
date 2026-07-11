@@ -220,6 +220,30 @@ export const SFX = {
     const og=this.ctx.createGain(); og.gain.setValueAtTime(0.3,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
     o.connect(og); og.connect(this.master); o.start(t); o.stop(t+0.15);
   },
+  // ---- raptor bark: short harsh yip when the pack engages ----
+  bark(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, dur=0.28;
+    const ws=this.ctx.createWaveShaper();
+    const cv=new Float32Array(256); for(let i=0;i<256;i++){const x=i/128-1; cv[i]=Math.tanh(x*4);}
+    ws.curve=cv;
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.8;
+    bp.frequency.setValueAtTime(1300,t); bp.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const out=this.ctx.createGain(); out.gain.setValueAtTime(0.0001,t);
+    out.gain.exponentialRampToValueAtTime(0.5,t+0.03);
+    out.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    ws.connect(bp); bp.connect(out); out.connect(this.master);
+    [520,780].forEach((f,i)=>{
+      const o=this.ctx.createOscillator(); o.type='sawtooth';
+      o.frequency.setValueAtTime(f*1.3,t); o.frequency.exponentialRampToValueAtTime(f*0.7,t+dur);
+      const og=this.ctx.createGain(); og.gain.value=i?0.3:0.5;
+      o.connect(og); og.connect(ws); o.start(t); o.stop(t+dur);
+    });
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(dur);
+    const nb=this.ctx.createBiquadFilter(); nb.type='bandpass'; nb.Q.value=1.1; nb.frequency.value=2200;
+    const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.25,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(nb); nb.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+dur);
+  },
   // ---- dilo hiss (detection): airy rattling threat ----
   hiss(){
     if(!this.ctx||this.muted) return;

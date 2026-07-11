@@ -1,4 +1,4 @@
-import { TILE, COLS, ROWS, PR, RR, DILO_R, DOOR_HP, STAMINA_MAX, POISON_DURATION } from '../src/config.js';
+import { TILE, COLS, ROWS, PR, RR, DILO_R, RAPTOR_R, DOOR_HP, STAMINA_MAX, POISON_DURATION } from '../src/config.js';
 import { genMaze, cellCenter } from '../src/grid.js';
 import { mulberry32 } from '../src/rng.js';
 import { cardsLeft } from '../src/level.js';
@@ -231,9 +231,10 @@ export function createRenderer(canvas, state, fx){
     // blood
     for(const b of fx.splats){ ctx.fillStyle='rgba(120,8,4,0.85)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); }
 
-    // rexes & dilos
+    // rexes, dilos & raptors
     for(const rex of state.rexes) drawRex(rex);
     for(const d of state.dilos) drawDilo(d);
+    for(const rap of state.raptors) drawRaptor(rap);
     // player
     drawPlayer();
     // sprint noise rings
@@ -304,6 +305,30 @@ export function createRenderer(canvas, state, fx){
     ctx.restore();
   }
 
+  function drawRaptor(rap){
+    const {x,y,dir,chasing}=rap;
+    const R=RAPTOR_R;
+    ctx.save(); ctx.translate(x,y); ctx.scale(dir,1);
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0,R-2,R,4,0,0,7); ctx.fill();
+    const pal=RAPTOR_COLORS[rap.role]||RAPTOR_COLORS.feinter;
+    const body=chasing?pal.chaseBody:pal.body, dark=chasing?pal.chaseDark:pal.dark;
+    // long stiff tail
+    ctx.fillStyle=dark; ctx.beginPath(); ctx.moveTo(-4,0); ctx.quadraticCurveTo(-24,-3,-30,-6); ctx.quadraticCurveTo(-20,3,-4,6); ctx.fill();
+    // lean body pitched forward, narrow snout
+    ctx.fillStyle=body; ctx.beginPath(); ctx.ellipse(0,0,R*0.95,R*0.5,-0.15,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R*0.75,-R*0.55,6,4.5,0.3,0,7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R*0.9,-R*0.72); ctx.lineTo(R*1.45,-R*0.5); ctx.lineTo(R*0.88,-R*0.32); ctx.fill();
+    // back stripes
+    ctx.fillStyle=dark; ctx.fillRect(-R*0.55,-R*0.45,2.5,5); ctx.fillRect(-R*0.2,-R*0.52,2.5,5); ctx.fillRect(R*0.15,-R*0.5,2.5,5);
+    // eye
+    ctx.fillStyle=chasing?'#ffb020':'#0a0a0a'; ctx.beginPath(); ctx.arc(R*0.78,-R*0.6,1.8,0,7); ctx.fill();
+    if(chasing){ ctx.shadowColor='#ffa010'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(R*0.78,-R*0.6,1.8,0,7); ctx.fill(); ctx.shadowBlur=0; }
+    // legs + sickle claw
+    ctx.fillStyle=body; ctx.fillRect(-2,R*0.3,3.5,9); ctx.fillRect(4,R*0.3,3.5,9);
+    ctx.fillStyle='#e8e0d0'; ctx.beginPath(); ctx.moveTo(6,R*0.75); ctx.quadraticCurveTo(9,R*0.55,10.5,R*0.8); ctx.lineTo(7,R*0.85); ctx.fill();
+    ctx.restore();
+  }
+
   function drawDarkness(){
     const player=state.player;
     // torch flicker
@@ -359,6 +384,21 @@ export function createRenderer(canvas, state, fx){
         const ex=d.x+d.dir*DILO_R*0.72, ey=d.y-DILO_R*0.58;
         ctx.beginPath(); ctx.arc(ex,ey,2,0,7); ctx.fill();
         ctx.beginPath(); ctx.arc(ex-d.dir*5,ey+1,2,0,7); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // and the amber eyes of the raptor pack
+    for(const rap of state.raptors){
+      const rd=Math.hypot(rap.x-px,rap.y-py);
+      const a=eyeGlowAlpha(rd,vR,rap.chasing);
+      if(a>0){
+        ctx.save(); ctx.globalCompositeOperation='lighter';
+        ctx.fillStyle=`rgba(255,${rap.chasing?150:185},20,${a})`;
+        ctx.shadowColor='#ffb020'; ctx.shadowBlur=12;
+        const ex=rap.x+rap.dir*RAPTOR_R*0.75, ey=rap.y-RAPTOR_R*0.55;
+        ctx.beginPath(); ctx.arc(ex,ey,2,0,7); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex-rap.dir*5,ey+1,2,0,7); ctx.fill();
         ctx.restore();
       }
     }
@@ -424,13 +464,21 @@ export function createRenderer(canvas, state, fx){
     if(state.status==='scare'){ ctx.fillStyle='#000'; ctx.fillRect(-40,-40,W+80,H+80); drawJumpscare(); ctx.restore(); return; }
 
     drawWorld();
-    if(state.status==='play'||state.status==='dead'||state.status==='levelclear'||state.status==='win'){ drawDarkness(); drawPoison(); drawHeartbeat(); }
+    if(state.status==='play'||state.status==='dead'||state.status==='levelclear'||state.status==='win'){ if(fx.dark) drawDarkness(); drawPoison(); drawHeartbeat(); }
 
     // level name (dim)
     if(state.status==='play'){ ctx.fillStyle='rgba(180,70,45,0.5)'; ctx.font='italic 12px Trebuchet MS'; ctx.textAlign='left'; ctx.fillText(state.cfg.name,12,20); drawStamina(); }
     ctx.restore();
   };
 }
+
+// one hide per pack role, so the player can read who is hunting how:
+// rusty driver, slate flanker, sandy feinter
+const RAPTOR_COLORS={
+  driver:  { body:'#6e2b16', dark:'#4a1c0e', chaseBody:'#8e3a1e', chaseDark:'#632812' },
+  flanker: { body:'#3c4a63', dark:'#283246', chaseBody:'#4d6083', chaseDark:'#38455e' },
+  feinter: { body:'#6a4a1c', dark:'#46300f', chaseBody:'#8a5a20', chaseDark:'#5e3c12' },
+};
 
 // the monster's head, drawn around the origin (spans x -150..200, y -130..130);
 // shared by the jumpscare and the menu hero

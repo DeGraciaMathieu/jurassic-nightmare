@@ -18,13 +18,20 @@
     <div class="item"><button id="padtoggle" title="Afficher/masquer le pad tactile">🎮</button></div>
     <div class="item"><button id="mute" title="Son on/off">🔊</button></div>
   </div>
+  <div id="debug" hidden>
+    <span>🐞 DEBUG</span>
+    <label>Secteur <select id="dbgSector">
+      <option value="0">1</option><option value="1">2</option><option value="2">3</option>
+    </select></label>
+    <label><input type="checkbox" id="dbgDark" checked> Obscurité</label>
+  </div>
   <canvas id="game" width="760" height="520"></canvas>
   <div id="overlay">
     <canvas id="heroMaze" width="760" height="560" aria-hidden="true"></canvas>
     <canvas id="hero" width="330" height="250" aria-hidden="true"></canvas>
     <h1>JURASSIC<span class="sub">N I G H T M A R E</span></h1>
     <p id="ovtext">La nuit est tombée sur le parc. Le courant a sauté. Perdu dans un dédale de couloirs, vous n'avez qu'une lampe torche mourante. Trouvez les <b>cartes d'accès</b> 🎫 puis rejoignez la <b>sortie</b> 🚪... avant que <b>ça</b> vous trouve dans le noir.</p>
-    <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs · 🚪 les <b>portes</b> s'ouvrent pour vous, lui devra les défoncer · 🦎 esquivez les crachats du <b>dilophosaure</b> : son venin aveugle et ralentit.</p>
+    <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs · 🚪 les <b>portes</b> s'ouvrent pour vous, lui devra les défoncer · 🦎 esquivez les crachats du <b>dilophosaure</b> : son venin aveugle et ralentit · 🦖 au dernier secteur, une <b>meute de raptors</b> chasse en équipe : le <b>roux</b> vous rabat, le <b>gris-bleu</b> vous prend à revers, l'<b>ocre</b> feinte avant de charger — ils ne défoncent pas les portes mais se faufilent tant qu'elles ne sont pas closes.</p>
     <p style="color:#c0472e;font-size:13px;">⚠️ Vous ne courez pas plus vite que lui, et sprinter fait du bruit qui les attire — tout comme marcher sur une <b>caisse</b> ou un <b>squelette</b>, qui craquent sous vos pas. Cachez-vous, ruser, survivez.</p>
     <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Sprint : <kbd>Shift</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
     <button id="btn">ENTRER DANS LE NOIR</button>

@@ -23,7 +23,7 @@ const els = {
 };
 
 const state = createApp({ rng: mulberry32(12345) });
-const fx = { shake:0, splats:[] }; // render-side effects (screen shake, blood)
+const fx = { shake:0, splats:[], dark:true }; // render-side effects (screen shake, blood) + debug darkness flag
 const hud = createHud(els);
 const render = createRenderer(canvas, state, fx);
 
@@ -36,6 +36,7 @@ state.bus.on('door:broken', ()=>SFX.doorBreak());
 state.bus.on('heartbeat', intensity=>SFX.heartbeat(intensity));
 state.bus.on('rex:roar', ()=>{ fx.shake=Math.max(fx.shake,14); SFX.roar(false); });
 state.bus.on('dilo:hiss', ()=>SFX.hiss());
+state.bus.on('raptor:bark', ()=>SFX.bark());
 state.bus.on('dilo:spit', ()=>SFX.spit());
 state.bus.on('player:poisoned', ()=>SFX.poisoned());
 state.bus.on('player:died', ({x,y})=>{
@@ -54,6 +55,21 @@ state.bus.on('game:won', ({score})=>{
 });
 
 attachInput({ state, canvas, els, sfx:SFX, hud, fx });
+
+// ---- debug mode (?debug in the URL): jump to any sector, toggle darkness ----
+if(new URLSearchParams(location.search).has('debug')){
+  document.getElementById('debug').hidden=false;
+  document.getElementById('dbgSector').addEventListener('change',e=>{
+    SFX.init();
+    state.levelIdx=+e.target.value;
+    loadLevel(state,state.levelIdx);
+    state.status='play';
+    fx.shake=0; fx.splats.length=0;
+    hud.hideOverlay();
+    SFX.startAmbient();
+  });
+  document.getElementById('dbgDark').addEventListener('change',e=>{ fx.dark=e.target.checked; });
+}
 
 loadLevel(state,0); // maze shown behind the menu overlay
 drawMenuMaze(document.getElementById('heroMaze'));
