@@ -254,13 +254,43 @@ export function createRenderer(canvas, state, fx){
     }
   }
 
+  // the survivor: rust jacket for a warm silhouette that reads in the dark,
+  // backpack, ranger cap, and an arm sweeping the torch toward the facing;
+  // the walk cycle is driven by distance travelled so cadence follows speed
+  let pFace=1, pWalk=0, pLX=null, pLY=null;
   function drawPlayer(){
-    const {x,y}=state.player;
+    const p=state.player, {x,y}=p;
+    if(p.fx!==0) pFace=p.fx>0?1:-1;
+    const moving=pLX!==null&&(x!==pLX||y!==pLY);
+    if(moving) pWalk+=Math.hypot(x-pLX,y-pLY);
+    pLX=x; pLY=y;
+    const ph=pWalk*0.32, swing=moving?Math.sin(ph)*2.6:0, bob=moving?Math.abs(Math.cos(ph)):0;
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+PR,PR,4,0,0,7); ctx.fill();
-    ctx.fillStyle='#c94a26'; ctx.beginPath(); ctx.arc(x,y,PR,0,7); ctx.fill();
-    ctx.fillStyle='#e9c79a'; ctx.beginPath(); ctx.arc(x,y-4,5.5,0,7); ctx.fill();
-    ctx.fillStyle='#4a3620'; ctx.beginPath(); ctx.ellipse(x,y-8,8,3,0,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(x,y-9,3.5,Math.PI,0); ctx.fill();
+    ctx.save(); ctx.translate(x,y-bob); ctx.scale(pFace,1);
+    // backpack on the back
+    ctx.fillStyle='#5a4326'; rr(-10.5,-8,7,11,2.5); ctx.fill();
+    ctx.fillStyle='#3e2d18'; ctx.fillRect(-10.5,-4.5,7,2);
+    // legs scissor with the walk cycle, boots underneath
+    ctx.fillStyle='#5c6238'; ctx.fillRect(-4.5+swing,2,4,8.5); ctx.fillRect(0.5-swing,2,4,8.5);
+    ctx.fillStyle='#332818'; ctx.fillRect(-4.5+swing,9,5,2.5); ctx.fillRect(0.5-swing,9,5,2.5);
+    // torso pitched slightly forward, pack strap across the chest
+    ctx.fillStyle='#c05026'; ctx.beginPath(); ctx.ellipse(-1,-2.5,6.5,8,0.12,0,7); ctx.fill();
+    ctx.strokeStyle='#7c3014'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-5,-8); ctx.lineTo(1,4); ctx.stroke();
+    // head under a ranger cap, eye toward the way ahead
+    ctx.fillStyle='#e9c79a'; ctx.beginPath(); ctx.arc(1,-11,4.6,0,7); ctx.fill();
+    ctx.fillStyle='#0a0a0a'; ctx.beginPath(); ctx.arc(3.2,-11,1,0,7); ctx.fill();
+    ctx.fillStyle='#3c4a2a'; ctx.beginPath(); ctx.arc(1,-11.6,4.7,Math.PI,0); ctx.fill();
+    ctx.fillRect(0.5,-13.2,7.5,1.8);
+    // arm aiming the torch along the facing (clamped so it stays readable)
+    const aim=Math.max(-1,Math.min(1,Math.atan2(p.fy,Math.abs(p.fx)||0.001)));
+    ctx.save(); ctx.translate(2,-5); ctx.rotate(aim);
+    ctx.strokeStyle='#c05026'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(7,1.5); ctx.stroke();
+    ctx.fillStyle='#e9c79a'; ctx.beginPath(); ctx.arc(7.5,1.5,2,0,7); ctx.fill();
+    ctx.fillStyle='#2a2d33'; ctx.fillRect(7,-0.5,5.5,3.5);
+    ctx.fillStyle='#ffd873'; ctx.shadowColor='#ffc040'; ctx.shadowBlur=9;
+    ctx.beginPath(); ctx.arc(13,1.2,1.8,0,7); ctx.fill(); ctx.shadowBlur=0;
+    ctx.restore();
+    ctx.restore();
   }
 
   function drawRex(rex){
