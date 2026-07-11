@@ -35,7 +35,7 @@ Mode debug : ajouter `?debug` à l'URL — saut direct vers un secteur et obscur
 ## Conventions de domaine
 
 - Grille 19×13 de tuiles de 40 px (canvas 760×520) ; `grid[r][c]` avec `0` = ouvert, `1` = mur ; clés de `Set`/`Map` au format `"c,r"` ; positions d'entités en pixels (centres de cases).
-- Terminologie : *rex* (prédateur de contact), *dilo* (dilophosaure, cracheur de venin du secteur 2), *raptor* (meute du secteur 3, rôles `feinter`/`flanker`/`feinter`), *venom* (globs de venin), *lure*/*flare* (leurre), *grass* (herbes hautes), *decor* (débris de couloir ; les caisses et squelettes craquent sous les pas), secteur (niveau), `chasing`/`alert`/`investigating` (états IA), `status ∈ menu|play|scare|dead|levelclear|win`.
+- Terminologie : *rex* (prédateur de contact), *dilo* (dilophosaure, cracheur de venin du secteur 2), *raptor* (meute du secteur 3, rôles `feinter`/`flanker`/`feinter`), *venom* (globs de venin), *lure*/*flare* (leurre), *grass* (herbes hautes), *decor* (débris de couloir ; les caisses et squelettes craquent sous les pas), secteur (niveau), `chasing`/`alert`/`investigating` (états IA), `status ∈ menu|play|scare|lifelost|dead|levelclear|win` (3 vies par partie : perdre une vie rejoue le secteur, la dernière → game over).
 - La **doc vivante** du joueur est le texte statique de l'overlay d'`index.html` (règles du jeu + légende des touches) : toute mécanique modifiée doit y rester exacte.
 
 ## Comportement (process)

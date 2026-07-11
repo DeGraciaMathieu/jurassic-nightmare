@@ -43,6 +43,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 | `dilo:spit` | `SFX.spit()` (la collerette du sprite s'ouvre via `dilo.spitT`) |
 | `player:poisoned` | `SFX.poisoned()` (la vignette verte et la torche réduite lisent `state.poisonT`/`visionR`) |
 | `player:died` `{x,y}` | `fx.shake = 26` + 10 éclaboussures + `SFX.raptorScream()` + `stopAmbient()` |
+| `life:lost` `{lives}` | overlay vie perdue (`html.lifeLostOverlay`) — le bouton relance le secteur via `retryLevel` (`render/input.js`) |
 | `game:over` `{level,score}` | overlay défaite (`html.deathOverlay`) |
 | `level:cleared` `{level,time,bonus,score}` | `stopAmbient()` + `chime(false)` + overlay |
 | `game:won` `{score}` | `stopAmbient()` + `chime(true)` + overlay |

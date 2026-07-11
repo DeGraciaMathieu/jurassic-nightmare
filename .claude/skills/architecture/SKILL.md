@@ -24,7 +24,7 @@ Deux couches ES modules, dépendance unidirectionnelle : `render/` importe `src/
 | `src/rex.js` | `updateRexes` (IA complète), `dangerLevel` (rexes + dilos) | config, grid, physics, doors |
 | `src/dilo.js` | `updateDilos` (traque + crachat), `updateVenoms` (globs + poison) | config, grid, physics, doors |
 | `src/raptor.js` | `updateRaptors` : meute du secteur 3 (rabatteur, flanqueur, feinteur), perception partagée | config, grid, physics, doors |
-| `src/app.js` | `createApp`, `update(state, dt)`, `startGame`, `nextLevel`, `die` | tout `src/` |
+| `src/app.js` | `createApp`, `update(state, dt)`, `startGame`, `retryLevel`, `nextLevel`, `die` | tout `src/` |
 
 ## Modules `render/`
 
@@ -42,8 +42,8 @@ Deux couches ES modules, dépendance unidirectionnelle : `render/` importe `src/
 
 | Champ | Contenu |
 |---|---|
-| `status` | `'menu' \| 'play' \| 'scare' \| 'dead' \| 'levelclear' \| 'win'` |
-| `levelIdx`, `score`, `levelTime` | progression |
+| `status` | `'menu' \| 'play' \| 'scare' \| 'lifelost' \| 'dead' \| 'levelclear' \| 'win'` |
+| `levelIdx`, `score`, `levelTime`, `lives` | progression (`lives` : 3 par partie ; perdre une vie rejoue le secteur via `retryLevel`, la dernière → `game:over`) |
 | `grid` | matrice `ROWS×COLS`, `0` = ouvert, `1` = mur |
 | `player` | `{x, y, fx, fy, hidden}` (fx/fy = facing) |
 | `exit`, `cards`, `rexes`, `dilos`, `raptors`, `doors`, `doorMap`, `grassSet`, `lures`, `venoms`, `decor` | entités du niveau (reset par `loadLevel`) |
@@ -70,6 +70,7 @@ Ordre des updates dans `update(state, dt)` (`src/app.js`) — à respecter :
 | `decor:crunch` | — | `src/player.js` |
 | `heartbeat` | intensité 0..1 | `src/app.js` |
 | `player:died` | `{x, y}` | `src/app.js` (`die`) |
+| `life:lost` | `{lives}` | `src/app.js` |
 | `game:over` | `{level, score}` | `src/app.js` |
 | `level:cleared` | `{level, time, bonus, score}` | `src/app.js` |
 | `game:won` | `{score}` | `src/app.js` |

@@ -21,11 +21,11 @@ Tests **macro** : on vérifie des comportements fonctionnels observables (« le 
 | `test/maze.test.js` | pourtour muré, connexité des cellules ouvertes, déterminisme à seed égal, `bfsNext` pas à pas |
 | `test/level.test.js` | effectifs conformes à `LEVELS`, positions départ/sortie, contraintes de distance au spawn |
 | `test/player.test.js` | déplacement/blocage mur, sprint plus rapide, endurance/épuisement/récupération, dissimulation, flare (consommation, cooldown, hors partie), ramassage de carte |
-| `test/rex.test.js` | détection + rugissement, LOS coupée par un mur, herbe (quasi-invisible), détournement par flare, investigation hors de vue, sprint entendu vs marche silencieuse, capture → scare → dead |
+| `test/rex.test.js` | détection + rugissement, LOS coupée par un mur, herbe (quasi-invisible), détournement par flare, investigation hors de vue, sprint entendu vs marche silencieuse, capture → scare → lifelost |
 | `test/dilo.test.js` | effectifs secteur 2, sifflement + traque, arrêt-et-crachat à portée, venin → poison (aveugle + ralentit) puis récupération, venin bloqué par un mur, contact mortel, flare/herbe, portes infranchissables |
 | `test/raptor.test.js` | meute du secteur 3 : rabatteur (aboiement + poursuite), partage de détection, flanqueur posté au revers, feintes avortées puis vraie charge mortelle, reset du cycle à vue perdue, faufilement de porte, contournement sans défonçage, craquements/flares |
 | `test/doors.test.js` | ouverture/fermeture à l'approche, solidité, blocage d'un patrouilleur, défonçage en chasse (4 coups) |
-| `test/game.test.js` | `startGame` (reset), déterminisme de partie, `levelclear` + bonus, victoire, mort → game over, test de fumée 10 s |
+| `test/game.test.js` | `startGame` (reset vies/flares inclus), déterminisme de partie, `levelclear` + bonus, victoire, perte de vie → rejouer le secteur, 3ᵉ mort → game over, test de fumée 10 s |
 
 ## Patterns des tests existants
 
