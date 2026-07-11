@@ -72,7 +72,9 @@ if(new URLSearchParams(location.search).has('debug')){
 }
 
 loadLevel(state,0); // maze shown behind the menu overlay
-drawMenuMaze(document.getElementById('heroMaze'));
+const mazeCanvas=document.getElementById('heroMaze');
+mazeCanvas.width=innerWidth; mazeCanvas.height=innerHeight; // the menu overlay spans the viewport
+drawMenuMaze(mazeCanvas);
 drawMenuHero(document.getElementById('hero'));
 hud.update(state);
 

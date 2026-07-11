@@ -544,7 +544,7 @@ export function drawMenuMaze(canvas){
 // text; CSS places it half-hidden in the overlay corner
 export function drawMenuHero(canvas){
   const c=canvas.getContext('2d');
-  const s=0.9;
+  const s=0.9*(canvas.width/330); // head designed at 330px wide, scale with the canvas resolution
   c.clearRect(0,0,canvas.width,canvas.height);
   c.save();
   c.translate(canvas.width/2+25*s, canvas.height/2); // 25 = head bounds x-offset, flipped by the mirror
