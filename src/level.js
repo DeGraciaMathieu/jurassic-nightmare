@@ -25,6 +25,15 @@ export function loadLevel(state,i){
                  seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
                  roarCD:0, lureTimer:0, lureX:null, lureY:null, hitCD:0 });
   }
+  const dilos = state.dilos = [];
+  const diloPool = shuffle(state.rng,openCells(grid)).filter(o=>cellDist(o,start)>6);
+  for(let k=0;k<cfg.dilo && diloPool.length;k++){
+    const cell=diloPool.shift(); const p=cellCenter(cell.c,cell.r);
+    dilos.push({ x:p.x,y:p.y, c:cell.c,r:cell.r, tc:cell.c,tr:cell.r,
+                 dir:1, chasing:false, alert:0,
+                 seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
+                 hissCD:0, lureTimer:0, lureX:null, lureY:null, spitCD:0, spitT:0 });
+  }
   // tall grass hiding patches
   const grassSet = state.grassSet = new Set();
   const gpool=shuffle(state.rng,openCells(grid)).filter(o=>!(o.c===start.c&&o.r===start.r)&&!(o.c===goal.c&&o.r===goal.r));
@@ -39,6 +48,7 @@ export function loadLevel(state,i){
     if(grassSet.has(o.c+','+o.r)) return false;
     if(cards.some(cd=>Math.floor(cd.x/TILE)===o.c && Math.floor(cd.y/TILE)===o.r)) return false;
     if(rexes.some(rx=>rx.c===o.c && rx.r===o.r)) return false;
+    if(dilos.some(dl=>dl.c===o.c && dl.r===o.r)) return false;
     const h = !wall(o.c-1,o.r) && !wall(o.c+1,o.r) && wall(o.c,o.r-1) && wall(o.c,o.r+1);
     const v = !wall(o.c,o.r-1) && !wall(o.c,o.r+1) && wall(o.c-1,o.r) && wall(o.c+1,o.r);
     return h||v;
@@ -53,6 +63,7 @@ export function loadLevel(state,i){
   }
 
   state.lures=[]; state.lureCount=3; state.throwCD=0;
+  state.venoms=[]; state.poisonT=0;
   state.stamina=STAMINA_MAX; state.exhausted=false;
   state.visionR=cfg.vision; state.levelTime=0;
 }

@@ -6,13 +6,14 @@ import { updatePlayer, pickupCards } from './player.js';
 import { updateLures } from './lures.js';
 import { updateDoors } from './doors.js';
 import { updateRexes, dangerLevel } from './rex.js';
+import { updateDilos, updateVenoms } from './dilo.js';
 
 export function createApp({ rng }){
   return {
     status:'menu', // menu | play | scare | dead | levelclear | win
     levelIdx:0, score:0, levelTime:0,
-    grid:null, player:null, exit:null, cards:[], rexes:[], cfg:null,
-    visionR:160, scareT:0, hbTimer:0,
+    grid:null, player:null, exit:null, cards:[], rexes:[], dilos:[], cfg:null,
+    visionR:160, scareT:0, hbTimer:0, venoms:[], poisonT:0,
     lures:[], lureCount:3, grassSet:new Set(), throwCD:0,
     doors:[], doorMap:new Map(),
     stamina:STAMINA_MAX, exhausted:false,
@@ -51,6 +52,8 @@ export function update(state,dt){
   updateLures(state,dt);
   pickupCards(state);
   if(updateRexes(state,dt)){ die(state); return; }
+  if(updateDilos(state,dt)){ die(state); return; }
+  updateVenoms(state,dt);
 
   // heartbeat driven by nearest threat
   const danger=dangerLevel(state);

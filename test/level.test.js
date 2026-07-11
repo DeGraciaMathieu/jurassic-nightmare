@@ -17,6 +17,7 @@ test('chaque niveau place les effectifs prévus par sa configuration', () => {
     const state = freshLevel(i);
     assert.equal(state.cards.length, cfg.cards);
     assert.equal(state.rexes.length, cfg.rex);
+    assert.equal(state.dilos.length, cfg.dilo);
     assert.ok(state.doors.length <= cfg.doors);
     assert.ok(state.grassSet.size > 0);
     assert.equal(state.doorMap.size, state.doors.length);
@@ -39,6 +40,9 @@ test('cartes et rexes ne spawnent pas sur le joueur', () => {
       assert.ok(cellDist({c:Math.floor(cd.x/TILE),r:Math.floor(cd.y/TILE)},start) > 3);
     for(const rx of state.rexes)
       assert.ok(cellDist({c:rx.c,r:rx.r},start) > 6);
+    const volier = freshLevel(1,seed);
+    for(const dl of volier.dilos)
+      assert.ok(cellDist({c:dl.c,r:dl.r},start) > 6);
   }
 });
 

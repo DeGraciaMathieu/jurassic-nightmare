@@ -1,8 +1,12 @@
-import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE } from './config.js';
+import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE, POISON_VISION, POISON_SLOW } from './config.js';
 import { movePlayerAxis } from './physics.js';
 
 export function updatePlayer(state,dt){
   const { keys, player } = state;
+  // dilo venom wearing off: dimmed torch and slowed legs while poisoned
+  state.poisonT=Math.max(0,state.poisonT-dt);
+  const poisoned=state.poisonT>0;
+  state.visionR+=(state.cfg.vision*(poisoned?POISON_VISION:1)-state.visionR)*Math.min(1,dt*3);
   let vx=0,vy=0;
   if(keys['w']||keys['arrowup'])vy--; if(keys['s']||keys['arrowdown'])vy++;
   if(keys['a']||keys['arrowleft'])vx--; if(keys['d']||keys['arrowright'])vx++;
@@ -15,7 +19,7 @@ export function updatePlayer(state,dt){
   if(state.stamina<=0) state.exhausted=true;
   else if(state.exhausted && state.stamina>=STAMINA_MAX*0.35) state.exhausted=false;
   if(l>0){ vx/=l; vy/=l; player.fx=vx; player.fy=vy;
-    const spd=sprinting?SPRINT_SPEED:PLAYER_SPEED;
+    const spd=(sprinting?SPRINT_SPEED:PLAYER_SPEED)*(poisoned?POISON_SLOW:1);
     const mx=vx*spd*dt, my=vy*spd*dt;
     if(mx!==0) movePlayerAxis(state,mx,0);
     if(my!==0) movePlayerAxis(state,0,my);
