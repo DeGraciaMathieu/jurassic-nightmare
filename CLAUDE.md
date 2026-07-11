@@ -12,6 +12,7 @@ Jeu d'infiltration/survie en canvas 2D : ramasser des cartes d'accès et fuir un
 |---|---|
 | `npm test` | `node --test` — tests macro dans `test/*.test.js` |
 | `npm run dev` | `npx serve .` — **obligatoire** : les ES modules ne se chargent pas en `file://` |
+| `npm run harness` | `scripts/harness.js` — un bot joue chaque secteur en headless et affiche le taux de réussite (`npm run harness -- [parties] [seed]`) |
 
 Pas de lint/format configuré (choix zéro-dépendance assumé) : suivre le style en place — indentation 2 espaces, code compact, une responsabilité par module.
 
