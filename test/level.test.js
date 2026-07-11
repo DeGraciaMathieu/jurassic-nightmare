@@ -52,7 +52,7 @@ test('le paddock lâche la meute : 3 raptors aux rôles fixes, zéro rex', () =>
     const state = freshLevel(2,seed);
     assert.equal(state.rexes.length, 0);
     assert.equal(state.raptors.length, 3);
-    assert.deepEqual(state.raptors.map(r=>r.role), ['driver','flanker','feinter']);
+    assert.deepEqual(state.raptors.map(r=>r.role), ['feinter','flanker','feinter']);
     assert.ok(state.doors.length <= 6);
     for(const rp of state.raptors)
       assert.ok(cellDist({c:rp.c,r:rp.r},{c:1,r:1}) > 6, 'pas sur le joueur');

@@ -37,7 +37,7 @@ export function loadLevel(state,i){
   // raptor pack: fixed roles, spawned like rexes
   const raptors = state.raptors = [];
   if(cfg.raptor){
-    const ROLES=['driver','flanker','feinter'];
+    const ROLES=['feinter','flanker','feinter'];
     const raptorPool = shuffle(state.rng,openCells(grid)).filter(o=>cellDist(o,start)>6);
     for(let k=0;k<cfg.raptor && raptorPool.length;k++){
       const cell=raptorPool.shift(); const p=cellCenter(cell.c,cell.r);
