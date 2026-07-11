@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "dev": "npx serve ."
+    "dev": "npx serve .",
+    "harness": "node scripts/harness.js"
   }
 }
