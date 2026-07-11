@@ -29,12 +29,67 @@
   <div id="overlay">
     <canvas id="heroMaze" width="760" height="560" aria-hidden="true"></canvas>
     <canvas id="hero" width="330" height="250" aria-hidden="true"></canvas>
-    <h1>JURASSIC<span class="sub">N I G H T M A R E</span></h1>
-    <p id="ovtext">La nuit est tombée sur le parc. Le courant a sauté. Perdu dans un dédale de couloirs, vous n'avez qu'une lampe torche mourante. Trouvez les <b>cartes d'accès</b> 🎫 puis rejoignez la <b>sortie</b> 🚪... avant que <b>ça</b> vous trouve dans le noir.</p>
-    <p style="font-size:13px;">🌿 Plongez dans les <b>hautes herbes</b> pour disparaître de sa vue · 🔥 lancez un <b>flare rouge</b> pour l'attirer ailleurs · 🚪 les <b>portes</b> s'ouvrent pour vous, lui devra les défoncer · 🦎 esquivez les crachats du <b>dilophosaure</b> : son venin aveugle et ralentit · 🦖 au dernier secteur, une <b>meute de raptors</b> chasse en équipe : les <b>ocre</b> feintent avant de charger, le <b>gris-bleu</b> file par les couloirs parallèles pour couper votre fuite — ils ne défoncent pas les portes mais se faufilent tant qu'elles ne sont pas closes.</p>
-    <p style="color:#c0472e;font-size:13px;">⚠️ Vous ne courez pas plus vite que lui, et sprinter fait du bruit qui les attire — tout comme marcher sur une <b>caisse</b> ou un <b>squelette</b>, qui craquent sous vos pas. Cachez-vous, ruser, survivez.</p>
-    <div class="keys">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Sprint : <kbd>Shift</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez + bouton 🎯</div>
-    <button id="btn">ENTRER DANS LE NOIR</button>
+    <div class="scan" aria-hidden="true"></div>
+    <span class="vf tl"></span><span class="vf tr"></span><span class="vf bl"></span><span class="vf br"></span>
+    <div id="ovscroll">
+      <section class="ov-hero">
+        <div class="ov-status menu-only"><span class="blink"></span> // LAPIN_BLANC.OBJ — AH AH AH, VOUS N'AVEZ PAS DIT LE MOT MAGIQUE</div>
+        <h1>JURASSIC<span class="sub">NIGHTMARE</span></h1>
+        <div class="ov-tag menu-only">S'infiltrer · Ruser · Survivre</div>
+        <p id="ovtext">La nuit est tombée sur le parc. Le courant a sauté. Perdu dans un dédale de couloirs avec une lampe torche mourante, trouvez les <b>cartes d'accès</b> 🎫 puis rejoignez la <b>sortie</b> 🚪... avant que <b>ça</b> vous trouve dans le noir.</p>
+        <button id="btn">▸ ENTRER DANS LE NOIR</button>
+        <div class="ov-more menu-only">▾ consignes de survie</div>
+      </section>
+      <div class="ov-ticker menu-only">
+        <span><i>Secteurs</i> <b>03</b></span>
+        <span><i>Flares</i> <b>03</b></span>
+        <span><i>Sortie</i> <b>1 par secteur</b></span>
+        <span><i>Mort</i> <b>la nuit recommence</b></span>
+      </div>
+      <section class="ov-specs menu-only">
+        <div class="ov-eyebrow">Registre de confinement · 03 entrées</div>
+        <div class="ov-grid">
+          <article class="spec" style="--role:#c0472e">
+            <div class="spec__art">🦖</div>
+            <div class="spec__body">
+              <div class="spec__top"><span class="spec__id">SPEC-001</span><span class="spec__status">SECTEURS 01–02</span></div>
+              <h3 class="spec__name">Rex</h3>
+              <div class="spec__threat">MENACE <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+              <p class="spec__desc">Chasse à vue et à l'oreille. <b>Défonce les portes</b> closes — mais vous perd dans les hautes herbes.</p>
+            </div>
+          </article>
+          <article class="spec" style="--role:#56b860">
+            <div class="spec__art">🦎</div>
+            <div class="spec__body">
+              <div class="spec__top"><span class="spec__id">SPEC-002</span><span class="spec__status">SECTEUR 02</span></div>
+              <h3 class="spec__name">Dilophosaure</h3>
+              <div class="spec__threat">MENACE <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+              <p class="spec__desc">Crache un venin qui <b>aveugle et ralentit</b>. Esquivez ses globs verts.</p>
+            </div>
+          </article>
+          <article class="spec" style="--role:#c8963c">
+            <div class="spec__art">🦖🦖🦖</div>
+            <div class="spec__body">
+              <div class="spec__top"><span class="spec__id">SPEC-003</span><span class="spec__status">SECTEUR 03 // MEUTE</span></div>
+              <h3 class="spec__name">Raptors</h3>
+              <div class="spec__threat">MENACE <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+              <p class="spec__desc">Chassent en équipe : les <b class="ocre">ocre</b> feintent avant de charger, le <b class="grisbleu">gris-bleu</b> file par les couloirs parallèles pour couper votre fuite. Seule leur charge dépasse votre sprint. Ne défoncent pas les portes mais s'y faufilent tant qu'elles ne sont pas closes.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="ov-rules menu-only">
+        <div class="ov-eyebrow">Protocole de survie</div>
+        <div class="ov-feat">
+          <div><span class="ic">🌿</span><h3>Hautes herbes</h3><p>Plongez-y pour disparaître de leur vue.</p></div>
+          <div><span class="ic">🔥</span><h3>Flare rouge</h3><p>Un leurre : lancez-le pour les attirer ailleurs.</p></div>
+          <div><span class="ic">🚪</span><h3>Portes de sécurité</h3><p>Elles s'ouvrent pour vous. Le rex, lui, devra les défoncer.</p></div>
+          <div><span class="ic">🔊</span><h3>Le bruit attire</h3><p>Sprinter s'entend de loin — et les <b>caisses</b> et <b>squelettes</b> craquent sous vos pas.</p></div>
+        </div>
+        <p class="ov-warn">⚠️ Votre endurance est courte et tout ce qui fait du bruit les rapproche. Cachez-vous, rusez, survivez.</p>
+      </section>
+      <div class="keys menu-only">Déplacement : <kbd>W A S D</kbd> / <kbd>flèches</kbd> · Sprint : <kbd>Shift</kbd> · Leurre : <kbd>Espace</kbd> · Mobile : glissez sur l'écran ou pad tactile</div>
+    </div>
   </div>
   <div id="touchpad">
     <div id="dpad">

@@ -1,3 +1,9 @@
+:root {
+  --bone:#e8e0d2; --muted:#9aa890; --dim:#5a6852;
+  --blood:#c0472e; --hazard:#e0a93e; --line:#33241c; --panel:rgba(22,12,8,0.88);
+  --disp:'Avenir Next Condensed','Arial Narrow','Segoe UI',system-ui,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
+}
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body {
   height:100%; background:#000;
@@ -29,12 +35,26 @@ canvas {
 #debug[hidden] { display:none; }
 #debug label { display:flex; gap:5px; align-items:center; }
 #overlay {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; background:rgba(2,1,1,0.94);
-  border-radius:10px; padding:20px; z-index:5; overflow:hidden;
+  position:absolute; inset:0; z-index:5; overflow:hidden;
+  text-align:left; background:rgba(4,2,1,0.93); border-radius:10px;
 }
 #overlay.hidden { display:none; }
+#ovscroll {
+  position:relative; height:100%; overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:#3a241c transparent;
+}
+#ovscroll::-webkit-scrollbar { width:8px; }
+#ovscroll::-webkit-scrollbar-thumb { background:#3a241c; }
+/* CRT scanlines + viewfinder corners over the whole overlay */
+#overlay .scan {
+  position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.35;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.22) 2px 3px);
+}
+.vf { position:absolute; z-index:3; width:22px; height:22px; border:2px solid var(--hazard); opacity:0.45; pointer-events:none; }
+.vf.tl { top:12px; left:12px; border-right:0; border-bottom:0; }
+.vf.tr { top:12px; right:12px; border-left:0; border-bottom:0; }
+.vf.bl { bottom:12px; left:12px; border-right:0; border-top:0; }
+.vf.br { bottom:12px; right:12px; border-left:0; border-top:0; }
 /* the maze glowing across the whole backdrop */
 #heroMaze {
   position:absolute; inset:0; z-index:-2;
@@ -50,16 +70,74 @@ canvas {
   -webkit-mask-image:linear-gradient(to left, #000 55%, transparent 100%);
           mask-image:linear-gradient(to left, #000 55%, transparent 100%);
 }
-h1 {
-  font-size:58px; color:#b5231a;
-  text-shadow:0 0 18px rgba(150,10,0,0.7), 2px 2px 0 #1a0000;
-  letter-spacing:6px; margin-bottom:2px; font-weight:900;
+/* ---- menu: hero ---- */
+.ov-hero { min-height:100%; display:flex; flex-direction:column; justify-content:center; padding:34px 38px 26px; }
+.ov-status {
+  display:flex; align-items:center; gap:9px; margin-bottom:16px;
+  font-family:var(--mono); font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--blood);
 }
-h1 .sub { display:block; font-size:17px; color:#7a8a70; letter-spacing:11px; text-shadow:none; margin-top:8px; }
-#overlay p { max-width:520px; line-height:1.55; margin:10px 0; color:#9aa890; font-size:15px; }
-#overlay .big { font-size:30px; margin:12px 0; display:block; }
+.blink { width:8px; height:8px; background:var(--blood); animation:blink 1.4s steps(1) infinite; }
+@keyframes blink { 50% { opacity:0.15; } }
+h1 {
+  font-family:var(--disp); font-weight:800; text-transform:uppercase;
+  font-size:clamp(44px,9vw,66px); line-height:0.95; letter-spacing:0.03em;
+  color:var(--bone); text-shadow:0 0 26px rgba(0,0,0,0.65);
+}
+h1 .sub { display:block; color:#b5231a; text-shadow:0 0 22px rgba(150,10,0,0.55); }
+.ov-tag {
+  margin-top:12px; font-family:var(--disp); font-weight:600;
+  font-size:15px; letter-spacing:0.24em; text-transform:uppercase; color:#7a8a70;
+}
+#ovtext { max-width:54ch; margin-top:16px; line-height:1.6; color:var(--muted); font-size:14.5px; }
+#overlay .big { font-size:28px; margin:12px 0; display:block; font-family:var(--disp); letter-spacing:0.04em; }
 .win { color:#7fd858; }
-.lose { color:#c0472e; }
+.lose { color:var(--blood); }
+.ov-more { margin-top:28px; font-family:var(--mono); font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--dim); }
+
+/* ---- menu: ticker, bestiary, rules ---- */
+.ov-ticker {
+  display:flex; flex-wrap:wrap; gap:8px 26px; padding:12px 38px;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:rgba(10,5,3,0.6);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim);
+}
+.ov-ticker i { font-style:normal; color:var(--hazard); }
+.ov-ticker b { color:var(--bone); }
+.ov-eyebrow { margin-bottom:14px; font-family:var(--mono); font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color:var(--hazard); }
+.ov-specs { padding:30px 38px 6px; }
+.ov-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.spec { background:var(--panel); border:1px solid var(--line); border-top:3px solid var(--role); }
+.spec__art {
+  height:64px; display:flex; align-items:center; justify-content:center; gap:2px;
+  font-size:34px; border-bottom:1px solid var(--line);
+  background:radial-gradient(70% 90% at 50% 40%, rgba(60,25,12,0.5), transparent 70%);
+}
+.spec__body { padding:12px 13px 14px; }
+.spec__top { display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; letter-spacing:0.12em; }
+.spec__id { color:var(--role); }
+.spec__status { color:var(--dim); }
+.spec__name { margin:6px 0 8px; font-family:var(--disp); font-weight:700; font-size:17px; letter-spacing:0.05em; text-transform:uppercase; color:var(--bone); }
+.spec__threat { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-family:var(--mono); font-size:9px; letter-spacing:0.16em; color:var(--dim); }
+.dots { display:flex; gap:3px; }
+.dots i { width:8px; height:8px; background:#2a1a12; }
+.dots i.on { background:var(--role); }
+.spec__desc { color:var(--muted); font-size:12px; line-height:1.5; }
+.spec__desc b { color:var(--bone); font-weight:600; }
+.spec__desc .ocre { color:#c8963c; }
+.spec__desc .grisbleu { color:#7d97c4; }
+.ov-rules { padding:26px 38px 8px; }
+.ov-feat { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+.ov-feat > div { background:#0d0705; padding:14px 16px; }
+.ov-feat .ic { display:block; margin-bottom:6px; font-size:18px; }
+.ov-feat h3 { margin-bottom:4px; font-family:var(--disp); font-size:14px; letter-spacing:0.06em; text-transform:uppercase; color:var(--bone); }
+.ov-feat p { color:var(--muted); font-size:12px; line-height:1.45; }
+.ov-feat b { color:var(--bone); font-weight:600; }
+.ov-warn { margin-top:14px; color:var(--blood); font-size:12.5px; line-height:1.5; }
+
+/* ---- end screens (death / clear / win): hud.js hides .menu-only and adds .end ---- */
+#overlay.end #ovscroll { text-align:center; }
+#overlay.end .ov-hero { align-items:center; }
+#overlay.end #ovtext { margin:10px 0; font-size:15px; }
+#overlay.end #btn { align-self:center; }
 button {
   margin-top:20px; padding:14px 34px; font-size:18px; font-weight:bold; font-family:inherit;
   color:#f0e6e0; background:linear-gradient(180deg,#8a1f12,#5a1109);
@@ -68,6 +146,13 @@ button {
 }
 button:hover { box-shadow:0 0 30px rgba(200,20,0,0.7); }
 button:active { transform:translateY(2px); }
+#btn {
+  margin-top:22px; align-self:flex-start; padding:14px 26px;
+  font-family:var(--mono); font-size:14px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  color:#1a0c05; background:var(--hazard); border:1px solid transparent; border-radius:0;
+  box-shadow:0 0 24px rgba(224,169,62,0.22);
+}
+#btn:hover { background:#f0bd55; box-shadow:0 0 32px rgba(224,169,62,0.4); }
 #mute, #throwbtn, #padtoggle {
   margin:0; padding:2px 8px; font-size:15px; line-height:1;
   background:#1a0f0c; color:#c9d2c0; border:1px solid #3a2420; border-radius:6px;
@@ -150,5 +235,13 @@ button:active { transform:translateY(2px); }
 }
 #touchpad.forced { display:flex; }
 @media (pointer:coarse) { #touchpad { display:flex; } #throwbtn, #padtoggle { display:none; } }
-.keys { font-size:13px; color:#5a6852; margin-top:16px; }
-.keys kbd { background:#1a1210; border:1px solid #3a2420; border-radius:4px; padding:2px 7px; margin:0 2px; font-family:monospace; }
+.keys {
+  margin-top:24px; padding:14px 38px 18px; border-top:1px solid var(--line);
+  font-family:var(--mono); font-size:11px; color:var(--dim);
+}
+.keys kbd { background:#1a1210; border:1px solid #3a2420; border-radius:4px; padding:2px 7px; margin:0 2px; font-family:var(--mono); }
+@media (max-width:640px) {
+  .ov-hero, .ov-specs, .ov-rules { padding-left:22px; padding-right:22px; }
+  .ov-ticker, .keys { padding-left:22px; padding-right:22px; }
+  .ov-grid, .ov-feat { grid-template-columns:1fr; }
+}
