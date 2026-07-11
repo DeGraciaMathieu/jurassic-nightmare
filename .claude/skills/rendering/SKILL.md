@@ -17,7 +17,9 @@ auto_invoke: true
 
 ## Ordre des couches de `drawWorld`
 
-sol → grime → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → joueur → marqueur « CACHÉ »
+sol → grime → décor → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → joueur → marqueur « CACHÉ »
+
+Décor des couloirs (`buildDecor`/`drawDecor` dans `draw.js`) : purement visuel, 5 types (sang séché, ossements, caisses, gravats, fissures), ~15 par niveau. Généré côté rendu avec un `mulberry32` seedé par un hash de la grille (jamais le rng du jeu), reconstruit quand `state.grid` change de référence ; évite départ/sortie/herbes/portes/cartes. Palette sourde pour ne pas concurrencer les éléments de gameplay.
 
 Après l'obscurité : `drawPoison()` (vignette verte pulsée tant que `state.poisonT > 0`) puis `drawHeartbeat()`. Les yeux qui luisent dans le noir couvrent rexes (rouges) et dilos (verts).
 

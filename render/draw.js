@@ -16,6 +16,100 @@ export function createRenderer(canvas, state, fx){
 
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
+  // ---- corridor set dressing (purely visual) ----
+  // rebuilt whenever the level grid changes; seeded from the maze layout so a
+  // given level always dresses the same, without touching the game rng
+  let decorGrid=null, decorItems=[];
+  function buildDecor(){
+    const g=state.grid;
+    let h=(state.levelIdx+1)*2654435761;
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) h=(h*31+g[r][c]+r*7+c)|0;
+    const rng=mulberry32(h);
+    const cells=[];
+    for(let r=1;r<ROWS-1;r++)for(let c=1;c<COLS-1;c++){
+      if(g[r][c]!==0) continue;
+      if(c===1&&r===1) continue;
+      if(c===state.exit.c&&r===state.exit.r) continue;
+      if(state.grassSet.has(c+','+r)) continue;
+      if(state.doorMap.has(c+','+r)) continue;
+      if(state.cards.some(cd=>Math.floor(cd.x/TILE)===c&&Math.floor(cd.y/TILE)===r)) continue;
+      cells.push({c,r});
+    }
+    const TYPES=['blood','bones','crate','rubble','crack'];
+    const items=[];
+    const count=Math.min(15,Math.floor(cells.length*0.2));
+    for(let i=0;i<count&&cells.length;i++){
+      const cell=cells.splice(Math.floor(rng()*cells.length),1)[0];
+      items.push({ type:TYPES[Math.floor(rng()*TYPES.length)],
+                   x:(cell.c+0.5)*TILE, y:(cell.r+0.5)*TILE,
+                   ox:(rng()-0.5)*10, oy:(rng()-0.5)*10,
+                   rot:rng()*Math.PI*2, s:0.8+rng()*0.5, v:rng() });
+    }
+    return items;
+  }
+
+  // small irregular pentagon, deterministic per seed — no per-frame randomness
+  function stonePath(x,y,s,seed){
+    ctx.beginPath();
+    for(let k=0;k<5;k++){
+      const a=k*1.256+Math.sin(seed*3.7+k*2.1)*0.4;
+      const r=s*(0.75+0.35*Math.abs(Math.sin(seed*2.3+k*1.7)));
+      const vx=x+Math.cos(a)*r, vy=y+Math.sin(a)*r;
+      if(k) ctx.lineTo(vx,vy); else ctx.moveTo(vx,vy);
+    }
+    ctx.closePath();
+  }
+
+  function drawDecor(it){
+    ctx.save(); ctx.translate(it.x+it.ox,it.y+it.oy); ctx.rotate(it.rot); ctx.scale(it.s,it.s);
+    if(it.type==='blood'){
+      // dried dark puddle with a drag smear
+      ctx.fillStyle='rgba(66,13,8,0.5)';
+      ctx.beginPath(); ctx.ellipse(0,0,9,6,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(9,3,4,2.5,0.4,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(-8,4,2,0,7); ctx.fill();
+      ctx.fillStyle='rgba(66,13,8,0.35)';
+      ctx.beginPath(); ctx.ellipse(16,6,7,2,0.3,0,7); ctx.fill();
+    } else if(it.type==='bones'){
+      // picked-clean skeleton seen from above: spine, rib hoops, dino skull
+      ctx.strokeStyle='rgba(210,200,175,0.65)'; ctx.lineWidth=1.8;
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(8,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(-21,2); ctx.stroke(); // tail tip
+      for(let i=0;i<4;i++){ ctx.beginPath(); ctx.ellipse(2-i*5,0,1.8,6.5-i*0.8,0,0,7); ctx.stroke(); }
+      ctx.fillStyle='rgba(210,200,175,0.75)';
+      ctx.beginPath(); ctx.arc(12,0,4.5,0,7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(15,-2); ctx.lineTo(21,1); ctx.lineTo(15,3); ctx.closePath(); ctx.fill(); // snout
+      ctx.fillStyle='rgba(15,15,12,0.85)';
+      ctx.beginPath(); ctx.arc(12.5,-1.2,1.1,0,7); ctx.fill(); // eye socket
+    } else if(it.type==='crate'){
+      ctx.fillStyle='#3d3120'; ctx.fillRect(-11,-11,22,22);
+      ctx.strokeStyle='rgba(20,14,6,0.8)'; ctx.lineWidth=1.5; ctx.strokeRect(-11,-11,22,22);
+      ctx.beginPath(); ctx.moveTo(-11,-4); ctx.lineTo(11,-4); ctx.moveTo(-11,4); ctx.lineTo(11,4); ctx.stroke();
+      ctx.fillStyle='rgba(120,100,60,0.25)'; ctx.fillRect(-11,-11,22,3);
+      if(it.v>0.6){ ctx.fillStyle='#332818'; ctx.fillRect(4,-18,13,13); ctx.strokeRect(4,-18,13,13); }
+    } else if(it.type==='rubble'){
+      // chunks of broken concrete: angular stones over a dust stain
+      ctx.fillStyle='rgba(18,20,14,0.35)';
+      ctx.beginPath(); ctx.ellipse(0,1,12,8,0,0,7); ctx.fill();
+      for(let i=0;i<7;i++){
+        const a=i*1.9+it.v*7, d=2+(i*2.3)%9;
+        const px=Math.cos(a)*d*1.5, py=Math.sin(a)*d;
+        const s0=i===0?3.8:1.6+((i*1.7)%2.4);
+        ctx.fillStyle='rgba(8,10,6,0.35)';
+        stonePath(px+1,py+1.4,s0,i); ctx.fill();
+        ctx.fillStyle=i%2?'rgba(104,98,80,0.75)':'rgba(84,80,64,0.75)';
+        stonePath(px,py,s0,i); ctx.fill();
+        ctx.fillStyle='rgba(150,145,120,0.28)';
+        stonePath(px-0.5,py-0.7,s0*0.55,i+3); ctx.fill();
+      }
+    } else { // crack
+      ctx.strokeStyle='rgba(8,10,6,0.5)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-12,-3); ctx.lineTo(-4,0); ctx.lineTo(3,-2); ctx.lineTo(12,2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-4,0); ctx.lineTo(-1,6); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawWorld(){
     const { grid, player } = state;
     // floor
@@ -25,6 +119,9 @@ export function createRenderer(canvas, state, fx){
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
       if(grid[r][c]===0 && (c+r)%2===0) ctx.fillRect(c*TILE,r*TILE,TILE,TILE);
     }
+    // corridor set dressing, under everything that lives
+    if(state.grid!==decorGrid){ decorGrid=state.grid; decorItems=buildDecor(); }
+    for(const it of decorItems) drawDecor(it);
     // tall grass (hiding cover)
     const sway=Math.sin(performance.now()/500)*1.5;
     for(const key of state.grassSet){
