@@ -45,7 +45,7 @@ Deux couches ES modules, dépendance unidirectionnelle : `render/` importe `src/
 | `levelIdx`, `score`, `levelTime` | progression |
 | `grid` | matrice `ROWS×COLS`, `0` = ouvert, `1` = mur |
 | `player` | `{x, y, fx, fy, hidden}` (fx/fy = facing) |
-| `exit`, `cards`, `rexes`, `dilos`, `doors`, `doorMap`, `grassSet`, `lures`, `venoms` | entités du niveau (reset par `loadLevel`) |
+| `exit`, `cards`, `rexes`, `dilos`, `doors`, `doorMap`, `grassSet`, `lures`, `venoms`, `decor` | entités du niveau (reset par `loadLevel`) |
 | `lureCount`, `throwCD`, `stamina`, `exhausted`, `visionR`, `poisonT`, `scareT`, `hbTimer` | compteurs de gameplay |
 | `keys`, `touchTarget` | entrées, écrites par `render/input.js` |
 | `bus`, `rng` | injectés à la création |
@@ -65,6 +65,7 @@ Ordre des updates dans `update(state, dt)` (`src/app.js`) — à respecter :
 | `player:poisoned` | — | `src/dilo.js` |
 | `card:picked` | — | `src/player.js` |
 | `lure:thrown` | — | `src/player.js` |
+| `decor:crunch` | — | `src/player.js` |
 | `heartbeat` | intensité 0..1 | `src/app.js` |
 | `player:died` | `{x, y}` | `src/app.js` (`die`) |
 | `game:over` | `{level, score}` | `src/app.js` |

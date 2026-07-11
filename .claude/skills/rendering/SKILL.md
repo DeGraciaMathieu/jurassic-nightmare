@@ -19,7 +19,7 @@ auto_invoke: true
 
 sol → grime → décor → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → joueur → marqueur « CACHÉ »
 
-Décor des couloirs (`buildDecor`/`drawDecor` dans `draw.js`) : purement visuel, 5 types (sang séché, ossements, caisses, gravats, fissures), ~15 par niveau. Généré côté rendu avec un `mulberry32` seedé par un hash de la grille (jamais le rng du jeu), reconstruit quand `state.grid` change de référence ; évite départ/sortie/herbes/portes/cartes. Palette sourde pour ne pas concurrencer les éléments de gameplay.
+Décor des couloirs (`buildDecor`/`drawDecor` dans `draw.js`) : types et positions viennent de `state.decor` (placé par `loadLevel` ; les caisses et squelettes craquent sous les pas — gameplay dans `src/player.js`). Seul le jitter visuel (offset, rotation, échelle) est généré côté rendu avec un `mulberry32` seedé par un hash de la grille (jamais le rng du jeu), reconstruit quand `state.grid` change de référence. Palette sourde pour ne pas concurrencer les éléments de gameplay.
 
 Après l'obscurité : `drawPoison()` (vignette verte pulsée tant que `state.poisonT > 0`) puis `drawHeartbeat()`. Les yeux qui luisent dans le noir couvrent rexes (rouges) et dilos (verts).
 
@@ -33,6 +33,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 |---|---|
 | `lure:thrown` | `SFX.lureThrow()` |
 | `card:picked` | `SFX.pickup()` |
+| `decor:crunch` | `SFX.crunch()` (caisse/squelette qui cède sous les pas) |
 | `door:hit` | `SFX.doorHit()` |
 | `door:broken` | `SFX.doorBreak()` (fracas + résonance métallique) |
 | `heartbeat` (intensité) | `SFX.heartbeat(intensité)` |
@@ -51,7 +52,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 
 ## Audio (`render/audio.js`)
 
-SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `hiss`, `spit`, `poisoned`, `footstep`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
+SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `hiss`, `spit`, `poisoned`, `footstep`, `crunch`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
 
 Les pas de sprint ne passent pas par le bus : la boucle de `main.js` cadence `SFX.footstep()` (toutes les 0.26 s) tant que `state.player.noisy` est vrai — le pendant sonore des anneaux de bruit.
 

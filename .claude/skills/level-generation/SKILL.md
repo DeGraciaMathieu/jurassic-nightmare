@@ -20,6 +20,7 @@ auto_invoke: true
 | Placement dilos | `loadLevel` | `cfg.dilo` par secteur, mêmes contraintes que les rexes ; champs propres : `hissCD,spitCD,spitT` |
 | Herbes | `loadLevel` → `state.grassSet` | `Set` de clés `"c,r"`, 18 max, jamais sur départ/sortie |
 | Portes | `loadLevel` → `state.doors` + `state.doorMap` | seulement sur des goulets de couloir (horizontal ou vertical), jamais sur herbe/carte/rex, espacement `cellDist ≥ 4`, plafond `cfg.doors` |
+| Décors | `loadLevel` → `state.decor` | 15 max (20 % des cases éligibles), 5 types (`blood/bones/crate/rubble/crack`), jamais sur départ/sortie/herbe/porte/carte ; caisses et squelettes craquent sous les pas (`src/player.js`) |
 | Déterminisme | `src/rng.js` | l'**ordre des tirages** rng dans `loadLevel` définit le niveau : ne pas réordonner les phases de placement sans raison |
 
 ## Ajouter un nouveau secteur
