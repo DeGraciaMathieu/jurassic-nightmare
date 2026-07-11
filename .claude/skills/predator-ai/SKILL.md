@@ -17,6 +17,7 @@ Deux prédateurs : le **rex** (`src/rex.js` `updateRexes`) et le **dilophosaure*
 | Détection | `sees` ⇒ `chasing=true`, `alert=2.2`, `seenC/seenR` = cellule du joueur, `lureTimer=0` |
 | Rugissement | passage en chasse avec `roarCD ≤ 0` → `bus.emit('rex:roar')` + `roarCD=2.5` |
 | Perte de vue | `alert` décroît de `dt` ; à 0, `chasing=false` |
+| Ouïe (sprint) | `src/player.js` : un joueur qui sprinte à moins de `SPRINT_HEAR=220` px alimente `alert`/`seenC/seenR` de rexes ET dilos — investigation à vitesse patrouille, sans passer en chasse |
 
 ## Priorités de but (ordre STRICT dans `updateRexes`)
 

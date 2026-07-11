@@ -156,6 +156,13 @@ export function createRenderer(canvas, state, fx){
     for(const d of state.dilos) drawDilo(d);
     // player
     drawPlayer();
+    // sprint noise rings
+    if(state.status==='play' && player.noisy){
+      const t=performance.now()/1000;
+      for(let k=0;k<2;k++){ const rr2=((t*1.6+k*0.5)%1)*34;
+        ctx.strokeStyle=`rgba(210,200,170,${0.3*(1-rr2/34)})`; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(player.x,player.y,PR+4+rr2,0,7); ctx.stroke(); }
+    }
     // concealment overlay + label when hidden
     if(state.status==='play' && player.hidden){
       ctx.strokeStyle='rgba(96,150,60,0.9)'; ctx.lineWidth=2;

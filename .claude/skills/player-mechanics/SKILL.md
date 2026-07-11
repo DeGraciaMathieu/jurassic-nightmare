@@ -14,6 +14,7 @@ auto_invoke: true
 | Déplacement | `updatePlayer` → `movePlayerAxis` (`src/physics.js`) | axe par axe ; arrondi de coins : glissement perpendiculaire jusqu'à `PR` px quand seul un coin bloque |
 | Vitesses | `PLAYER_SPEED=138`, `SPRINT_SPEED=210` | sprint > chase max (188), marche < chase min (150) — l'avertissement de l'overlay (« vous ne courez pas plus vite que lui ») repose sur la marche |
 | Endurance | `stamina` (`STAMINA_MAX=2.6` s), régén `STAMINA_REGEN=0.5`/s | à 0 → `exhausted` ; fin d'épuisement au seuil 35 % de `STAMINA_MAX` |
+| Bruit de sprint | `updatePlayer` → `player.noisy` | sprinter alerte les prédateurs à moins de `SPRINT_HEAR=220` px (murs ignorés, comme l'ouïe des flares) : `alert=max(alert, SPRINT_ALERT=1.5)` + `seenC/seenR` = ta cellule ; un flare actif garde la priorité |
 | Dissimulation | `player.hidden = grassSet.has("c,r")` | recalculé chaque frame ; réduit la vue des rexes à `HIDE_SIGHT=54` |
 | Flare : lancer | `throwLure` (`src/player.js`) | exige `status='play'`, `lureCount>0`, `throwCD=0` (cooldown 0.5 s) ; direction = facing `(fx, fy)` ; `bus.emit('lure:thrown')` |
 | Flare : vol | `updateLures` (`src/lures.js`) | 280 px/s ; s'arrête au mur (rayon 4) ou après 4.2 tuiles ; à l'atterrissage → `attractRexes` (portée d'ouïe `LURE_HEAR=320`) |
