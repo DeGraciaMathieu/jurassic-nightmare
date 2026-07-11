@@ -24,7 +24,8 @@ const els = {
 };
 
 const state = createApp({ rng: mulberry32(12345) });
-const fx = { shake:0, splats:[], dark:true }; // render-side effects (screen shake, blood) + debug darkness flag
+const fx = { shake:0, splats:[], pulse:0, dark:true }; // render-side effects (screen shake, blood, page danger halo) + debug darkness flag
+const dangerGlow = document.getElementById('dangerGlow');
 const hud = createHud(els);
 const render = createRenderer(canvas, state, fx);
 
@@ -34,7 +35,7 @@ state.bus.on('card:picked', ()=>SFX.pickup());
 state.bus.on('decor:crunch', ()=>SFX.crunch());
 state.bus.on('door:hit', ()=>SFX.doorHit());
 state.bus.on('door:broken', ()=>SFX.doorBreak());
-state.bus.on('heartbeat', intensity=>SFX.heartbeat(intensity));
+state.bus.on('heartbeat', intensity=>{ SFX.heartbeat(intensity); fx.pulse=Math.max(fx.pulse,intensity); });
 state.bus.on('rex:roar', ()=>{ fx.shake=Math.max(fx.shake,14); SFX.roar(false); });
 state.bus.on('dilo:hiss', ()=>SFX.hiss());
 state.bus.on('raptor:bark', ()=>SFX.bark());
@@ -89,6 +90,8 @@ let stepT=0; // sprint footsteps cadence, driven by state.player.noisy
 function loop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   if(fx.shake>0) fx.shake=Math.max(0,fx.shake-dt*40);
+  if(fx.pulse>0) fx.pulse=Math.max(0,fx.pulse-dt*0.8); // fades between two heartbeats
+  dangerGlow.style.opacity=fx.pulse.toFixed(3);
   update(state,dt);
   if(state.status==='play' && state.player.noisy){
     stepT-=dt;

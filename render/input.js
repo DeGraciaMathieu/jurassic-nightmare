@@ -56,7 +56,7 @@ export function attachInput({ state, canvas, els, sfx, hud, fx }){
     } else if(state.status==='levelclear'){
       nextLevel(state);
     } else return;
-    fx.shake=0; fx.splats.length=0;
+    fx.shake=0; fx.splats.length=0; fx.pulse=0;
     hud.hideOverlay();
     sfx.startAmbient();
   });

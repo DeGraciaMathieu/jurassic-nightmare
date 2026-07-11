@@ -36,7 +36,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 | `decor:crunch` | `SFX.crunch()` (caisse/squelette qui cède sous les pas) |
 | `door:hit` | `SFX.doorHit()` |
 | `door:broken` | `SFX.doorBreak()` (fracas + résonance métallique) |
-| `heartbeat` (intensité) | `SFX.heartbeat(intensité)` |
+| `heartbeat` (intensité) | `SFX.heartbeat(intensité)` + `fx.pulse` (halo rouge de page `#dangerGlow`, décroissance `dt × 0.8` dans la boucle) |
 | `rex:roar` | `fx.shake ≥ 14` + `SFX.roar(false)` |
 | `dilo:hiss` | `SFX.hiss()` |
 | `raptor:bark` | `SFX.bark()` (cri de meute à l'engagement) |
@@ -50,7 +50,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 
 ## Effets côté rendu (objet `fx` de `main.js`)
 
-`shake` (secousse écran) et `splats` (sang) sont **purement visuels : jamais dans `state`**. Ici, `Math.random()` est permis (contrairement à `src/`). Remis à zéro au clic de (re)lancement (`render/input.js`).
+`shake` (secousse écran), `splats` (sang) et `pulse` (halo rouge de page suivant le rythme cardiaque) sont **purement visuels : jamais dans `state`**. Ici, `Math.random()` est permis (contrairement à `src/`). Remis à zéro au clic de (re)lancement (`render/input.js`).
 
 ## Audio (`render/audio.js`)
 
