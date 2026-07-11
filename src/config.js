@@ -25,4 +25,4 @@ export const RAPTOR_PATROL = 110, RAPTOR_CHASE = 175, RAPTOR_LUNGE = 230; // onl
 export const RAPTOR_HOLD_DIST = 140, RAPTOR_ABORT_DIST = 60, RAPTOR_ENGAGE_DIST = 60;
 export const RAPTOR_FEINTS = 2, RAPTOR_FEINT_WINDUP = 0.5, RAPTOR_LOST_SIGHT = 1;
 export const RAPTOR_DOOR_SLIP = 0.4; // raptors never smash doors but slip through while open >= this
-export const FLANK_BEHIND = 3; // how many tiles behind the player's facing the flanker aims for
+export const FLANK_AHEAD = 4; // how many tiles ahead of the player's heading the flanker aims to cut off

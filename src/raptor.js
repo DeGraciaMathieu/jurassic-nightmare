@@ -1,22 +1,23 @@
 import { TILE, PR, HIDE_SIGHT, RAPTOR_R, RAPTOR_PATROL, RAPTOR_CHASE, RAPTOR_LUNGE,
          RAPTOR_HOLD_DIST, RAPTOR_ABORT_DIST, RAPTOR_ENGAGE_DIST, RAPTOR_FEINTS,
-         RAPTOR_FEINT_WINDUP, RAPTOR_LOST_SIGHT, FLANK_BEHIND } from './config.js';
+         RAPTOR_FEINT_WINDUP, RAPTOR_LOST_SIGHT, FLANK_AHEAD } from './config.js';
 import { cellCenter, isWall, bfsNext } from './grid.js';
 import { losBlocked } from './physics.js';
 import { doorBlocksRaptor } from './doors.js';
 
-// the flanker aims for the first open cell behind the player's facing,
-// scanning from FLANK_BEHIND tiles down to 1; falls back to a direct chase
+// the flanker cuts the prey off: it aims for the first open cell ahead of
+// the player's heading, scanning from FLANK_AHEAD tiles down to 2 so it
+// posts on the escape route instead of the player's back
 function flankGoal(state,pc,pr){
   let fx=state.player.fx, fy=state.player.fy;
   if(fx===0&&fy===0) fx=1;
-  const bx = Math.abs(fx)>=Math.abs(fy) ? -Math.sign(fx) : 0;
-  const by = bx===0 ? -Math.sign(fy) : 0;
-  for(let k=FLANK_BEHIND;k>=1;k--){
-    const c=pc+bx*k, r=pr+by*k;
+  const ax = Math.abs(fx)>=Math.abs(fy) ? Math.sign(fx) : 0;
+  const ay = ax===0 ? Math.sign(fy) : 0;
+  for(let k=FLANK_AHEAD;k>=2;k--){
+    const c=pc+ax*k, r=pr+ay*k;
     if(!isWall(state.grid,c,r)) return {c,r};
   }
-  return {c:pc,r:pr};
+  return null;
 }
 
 function openNeighbours(state,c,r){
@@ -46,7 +47,7 @@ export function updateRaptors(state,dt){
       rap.chasing=true; rap.lureTimer=0;
     }
     if(packSees){ rap.alert=2.2; rap.seenC=pc; rap.seenR=pr; }
-    else { if(rap.alert>0) rap.alert-=dt; if(rap.alert<=0) rap.chasing=false; }
+    else { if(rap.alert>0) rap.alert-=dt; if(rap.alert<=0){ rap.chasing=false; rap.flankC=null; rap.flankR=null; } }
 
     // feinter loses its nerve when sight breaks too long: the cycle restarts
     if(rap.role==='feinter'){
@@ -55,9 +56,12 @@ export function updateRaptors(state,dt){
     }
 
     // decide goal: pack engagement drives the role, then lure > last seen > wander
-    let goalC=null, goalR=null, speed=RAPTOR_PATROL, holding=false;
+    let goalC=null, goalR=null, speed=RAPTOR_PATROL, holding=false, flanking=false;
     if(packSees && rap.role==='flanker' && rap.dist>RAPTOR_ENGAGE_DIST){
-      const g=flankGoal(state,pc,pr); goalC=g.c; goalR=g.r; speed=RAPTOR_CHASE;
+      const g=flankGoal(state,pc,pr);
+      rap.flankC=g?g.c:null; rap.flankR=g?g.r:null;
+      if(g){ goalC=g.c; goalR=g.r; speed=RAPTOR_CHASE; flanking=true; }
+      else { goalC=rap.seenC; goalR=rap.seenR; speed=RAPTOR_CHASE; }
     } else if(packSees && rap.role==='feinter' && rap.sees){
       if(rap.mode==='lunge'){ goalC=pc; goalR=pr; speed=RAPTOR_LUNGE; }
       else if(rap.mode==='feint'){
@@ -76,6 +80,11 @@ export function updateRaptors(state,dt){
       }
     } else if(packSees){ goalC=rap.seenC; goalR=rap.seenR; speed=RAPTOR_CHASE; }
     else if(rap.lureTimer>0 && rap.lureX!=null){ goalC=Math.floor(rap.lureX/TILE); goalR=Math.floor(rap.lureY/TILE); speed=RAPTOR_PATROL*1.4; }
+    else if(rap.alert>0 && rap.role==='flanker' && rap.flankC!=null){
+      // committed cut-off: sight always breaks inside a parallel corridor,
+      // so the flanker holds its course for the whole alert window
+      goalC=rap.flankC; goalR=rap.flankR; speed=RAPTOR_CHASE; flanking=true;
+    }
     else if(rap.alert>0){ goalC=rap.seenC; goalR=rap.seenR; }
 
     // choose next cell when arrived at target center; raptors never smash
@@ -96,8 +105,15 @@ export function updateRaptors(state,dt){
         }
       } else {
         const arrived = goalC!=null && goalC===rap.c && goalR===rap.r; // e.g. flanker posted on its cut-off cell
-        if(goalC!=null && !arrived)
-          nxt=bfsNext(state.grid,rap.c,rap.r,goalC,goalR,(c,r)=>doorBlocksRaptor(state,c,r));
+        if(goalC!=null && !arrived){
+          // a flanker routes around the prey's (last seen) cell so it takes a
+          // maze loop; with no loop it falls back to driving straight in
+          nxt = flanking
+            ? bfsNext(state.grid,rap.c,rap.r,goalC,goalR,(c,r)=>doorBlocksRaptor(state,c,r)||(c===rap.seenC&&r===rap.seenR))
+            : bfsNext(state.grid,rap.c,rap.r,goalC,goalR,(c,r)=>doorBlocksRaptor(state,c,r));
+          if(!nxt && flanking)
+            nxt=bfsNext(state.grid,rap.c,rap.r,rap.seenC,rap.seenR,(c,r)=>doorBlocksRaptor(state,c,r));
+        }
         if(!nxt && !arrived){ // wander: random open neighbour, avoid reversing
           const opts=openNeighbours(state,rap.c,rap.r);
           const fwd=opts.filter(o=>!(o.c===rap.prevC&&o.r===rap.prevR));

@@ -44,7 +44,7 @@ export function loadLevel(state,i){
       raptors.push({ x:p.x,y:p.y, c:cell.c,r:cell.r, tc:cell.c,tr:cell.r,
                      dir:1, role:ROLES[k%ROLES.length], chasing:false, alert:0,
                      seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
-                     barkCD:0, lureTimer:0, lureX:null, lureY:null,
+                     barkCD:0, lureTimer:0, lureX:null, lureY:null, flankC:null, flankR:null,
                      feints:0, feintT:0, mode:'hold', lostT:0, sees:false, dist:1e9 });
     }
   }

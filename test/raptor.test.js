@@ -21,7 +21,7 @@ function addRaptor(state,c,r,role){
   const rap={ x:(c+0.5)*TILE, y:(r+0.5)*TILE, c, r, tc:c, tr:r,
               dir:1, role, chasing:false, alert:0,
               seenC:c, seenR:r, prevC:c, prevR:r,
-              barkCD:0, lureTimer:0, lureX:null, lureY:null,
+              barkCD:0, lureTimer:0, lureX:null, lureY:null, flankC:null, flankR:null,
               feints:0, feintT:0, mode:'hold', lostT:0, sees:false, dist:1e9 };
   state.raptors.push(rap);
   return rap;
@@ -56,13 +56,35 @@ test('la meute partage la détection', () => {
   assert.equal(flanker.seenR, 6);
 });
 
-test('le flanqueur se poste dans le dos du joueur', () => {
+test('le flanqueur coupe la route devant le joueur, sans le traverser', () => {
   const state = arena();
-  const flanker = addRaptor(state,5,6,'flanker'); // à 160 px, il voit le joueur
-  step(state,2);
-  // joueur face à droite (fx=1) : le revers est 3 cases derrière lui, la cellule (6,6)
-  assert.ok(Math.hypot(flanker.x-6.5*TILE, flanker.y-6.5*TILE) < 3, 'posté sur la cellule de revers');
+  const flanker = addRaptor(state,11,8,'flanker'); // à 113 px, il voit le joueur
+  let crossed=false;
+  for(let t=0;t<2;t+=1/60){ update(state,1/60); if(flanker.c===9&&flanker.r===6) crossed=true; }
+  // joueur face à droite (fx=1) : l'interception vise 4 cases devant lui, la cellule (13,6)
+  assert.ok(Math.hypot(flanker.x-13.5*TILE, flanker.y-6.5*TILE) < 3, 'posté sur la route de fuite');
+  assert.equal(crossed, false, 'il ne traverse jamais la case du joueur');
   assert.equal(state.status, 'play', 'il ne fonce pas au contact');
+});
+
+test('le flanqueur emprunte la boucle et tient son cap hors de vue', () => {
+  const state = arena();
+  for(let c=1;c<COLS-1;c++){ state.grid[5][c]=1; state.grid[7][c]=1; } // le joueur vit dans le couloir de la rangée 6
+  state.grid[5][7]=0; state.grid[5][11]=0; // deux passages vers la zone parallèle du haut
+  const flanker = addRaptor(state,7,6,'flanker'); // derrière le joueur, dans son couloir
+  let crossed=false;
+  for(let t=0;t<4;t+=1/60){ update(state,1/60); if(flanker.c===9&&flanker.r===6) crossed=true; }
+  assert.ok(Math.hypot(flanker.x-13.5*TILE, flanker.y-6.5*TILE) < 3, 'posté devant la fuite via la boucle');
+  assert.equal(crossed, false, 'jamais par la case du joueur');
+  assert.equal(state.status, 'play');
+});
+
+test('sans boucle, le flanqueur se rabat en chasse directe', () => {
+  const state = arena();
+  for(let c=1;c<COLS-1;c++){ state.grid[5][c]=1; state.grid[7][c]=1; } // couloir sans échappatoire
+  addRaptor(state,5,6,'flanker'); // derrière le joueur, à portée de vue
+  step(state,2.5);
+  assert.notEqual(state.status, 'play', 'il a foncé au contact');
 });
 
 test('le feinteur avorte ses premières charges sans atteindre le contact', () => {
