@@ -1,4 +1,4 @@
-import { TILE, COLS, ROWS, PR, RR, DOOR_HP, STAMINA_MAX } from '../src/config.js';
+import { TILE, COLS, ROWS, PR, RR, DILO_R, DOOR_HP, STAMINA_MAX, POISON_DURATION } from '../src/config.js';
 import { genMaze, cellCenter } from '../src/grid.js';
 import { mulberry32 } from '../src/rng.js';
 import { cardsLeft } from '../src/level.js';
@@ -138,11 +138,22 @@ export function createRenderer(canvas, state, fx){
       ctx.restore();
     }
 
+    // venom globs
+    for(const v of state.venoms){
+      ctx.save();
+      ctx.strokeStyle='rgba(150,230,40,0.35)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(v.x,v.y); ctx.lineTo(v.x-v.vx*0.05,v.y-v.vy*0.05); ctx.stroke();
+      ctx.fillStyle='#9ee61e'; ctx.shadowColor='#aaff20'; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.arc(v.x,v.y,4.5,0,7); ctx.fill();
+      ctx.restore();
+    }
+
     // blood
     for(const b of fx.splats){ ctx.fillStyle='rgba(120,8,4,0.85)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); }
 
-    // rexes
+    // rexes & dilos
     for(const rex of state.rexes) drawRex(rex);
+    for(const d of state.dilos) drawDilo(d);
     // player
     drawPlayer();
     // concealment overlay + label when hidden
@@ -177,6 +188,32 @@ export function createRenderer(canvas, state, fx){
     ctx.fillStyle=chasing?'#ff2a1a':'#0a0a0a'; ctx.beginPath(); ctx.arc(RR*0.82,-RR*0.45,2.2,0,7); ctx.fill();
     if(chasing){ ctx.shadowColor='#ff2a1a'; ctx.shadowBlur=10; ctx.beginPath(); ctx.arc(RR*0.82,-RR*0.45,2.2,0,7); ctx.fill(); ctx.shadowBlur=0; }
     ctx.fillStyle=body; ctx.fillRect(-3,RR*0.4,4,9); ctx.fillRect(5,RR*0.4,4,9);
+    ctx.restore();
+  }
+
+  function drawDilo(d){
+    const {x,y,dir,chasing}=d;
+    const R=DILO_R;
+    ctx.save(); ctx.translate(x,y); ctx.scale(dir,1);
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0,R-2,R,4,0,0,7); ctx.fill();
+    const body=chasing?'#7a8a22':'#55651c', dark=chasing?'#55651c':'#3a4614';
+    // tail
+    ctx.fillStyle=dark; ctx.beginPath(); ctx.moveTo(-4,1); ctx.quadraticCurveTo(-20,-1,-24,-9); ctx.quadraticCurveTo(-16,2,-4,7); ctx.fill();
+    // frill, flaring wide when it spits
+    const flare=d.spitT>0?1:(chasing?0.45:0.1);
+    ctx.fillStyle=`rgba(200,60,30,${0.35+0.55*flare})`;
+    ctx.beginPath(); ctx.ellipse(R*0.55,-R*0.55,5+7*flare,6+8*flare,-0.4,0,7); ctx.fill();
+    // body & head
+    ctx.fillStyle=body; ctx.beginPath(); ctx.ellipse(0,0,R*0.9,R*0.62,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R*0.72,-R*0.5,7,5,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R*0.9,-R*0.62); ctx.lineTo(R*1.35,-R*0.42); ctx.lineTo(R*0.9,-R*0.26); ctx.fill();
+    // back stripes
+    ctx.fillStyle=dark; ctx.fillRect(-R*0.5,-R*0.55,3,5); ctx.fillRect(-R*0.15,-R*0.62,3,5); ctx.fillRect(R*0.2,-R*0.6,3,5);
+    // eye
+    ctx.fillStyle=chasing?'#d8ff30':'#0a0a0a'; ctx.beginPath(); ctx.arc(R*0.72,-R*0.58,1.8,0,7); ctx.fill();
+    if(chasing){ ctx.shadowColor='#c8f020'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(R*0.72,-R*0.58,1.8,0,7); ctx.fill(); ctx.shadowBlur=0; }
+    // legs
+    ctx.fillStyle=body; ctx.fillRect(-2,R*0.35,3.5,8); ctx.fillRect(4,R*0.35,3.5,8);
     ctx.restore();
   }
 
@@ -224,6 +261,21 @@ export function createRenderer(canvas, state, fx){
       }
     }
 
+    // and the greenish eyes of dilos
+    for(const d of state.dilos){
+      const dd=Math.hypot(d.x-px,d.y-py);
+      const a=eyeGlowAlpha(dd,vR,d.chasing);
+      if(a>0){
+        ctx.save(); ctx.globalCompositeOperation='lighter';
+        ctx.fillStyle=`rgba(190,255,${d.chasing?30:80},${a})`;
+        ctx.shadowColor='#b0ff20'; ctx.shadowBlur=12;
+        const ex=d.x+d.dir*DILO_R*0.72, ey=d.y-DILO_R*0.58;
+        ctx.beginPath(); ctx.arc(ex,ey,2,0,7); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex-d.dir*5,ey+1,2,0,7); ctx.fill();
+        ctx.restore();
+      }
+    }
+
     // warm red tint over the area each flare reveals
     for(const L of state.lures){
       if(L.flying) continue;
@@ -236,6 +288,16 @@ export function createRenderer(canvas, state, fx){
       ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(L.x,L.y,80*flick2,0,7); ctx.fill();
       ctx.restore();
     }
+  }
+
+  function drawPoison(){
+    if(state.poisonT<=0) return;
+    const k=Math.min(1,state.poisonT/POISON_DURATION);
+    const t=performance.now()/1000;
+    const a=k*(0.30+0.08*Math.sin(t*9));
+    const g=ctx.createRadialGradient(W/2,H/2,H*0.18,W/2,H/2,H*0.75);
+    g.addColorStop(0,'rgba(60,120,10,0)'); g.addColorStop(1,`rgba(90,160,20,${a})`);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
   }
 
   function drawHeartbeat(){
@@ -275,7 +337,7 @@ export function createRenderer(canvas, state, fx){
     if(state.status==='scare'){ ctx.fillStyle='#000'; ctx.fillRect(-40,-40,W+80,H+80); drawJumpscare(); ctx.restore(); return; }
 
     drawWorld();
-    if(state.status==='play'||state.status==='dead'||state.status==='levelclear'||state.status==='win'){ drawDarkness(); drawHeartbeat(); }
+    if(state.status==='play'||state.status==='dead'||state.status==='levelclear'||state.status==='win'){ drawDarkness(); drawPoison(); drawHeartbeat(); }
 
     // level name (dim)
     if(state.status==='play'){ ctx.fillStyle='rgba(180,70,45,0.5)'; ctx.font='italic 12px Trebuchet MS'; ctx.textAlign='left'; ctx.fillText(state.cfg.name,12,20); drawStamina(); }

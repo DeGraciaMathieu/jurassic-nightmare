@@ -186,6 +186,43 @@ export const SFX = {
     const rg=this.ctx.createGain(); rg.gain.setValueAtTime(1.0,t); rg.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
     src2.connect(lp); lp.connect(rg); rg.connect(this.master); src2.start(t); src2.stop(t+0.6);
   },
+  // ---- dilo hiss (detection): airy rattling threat ----
+  hiss(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, dur=0.7;
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(dur);
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.2;
+    bp.frequency.setValueAtTime(2400,t); bp.frequency.exponentialRampToValueAtTime(1100,t+dur);
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.4,t+0.06); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    // rattle
+    const trem=this.ctx.createOscillator(); trem.type='square'; trem.frequency.value=16;
+    const tg=this.ctx.createGain(); tg.gain.value=0.18; trem.connect(tg); tg.connect(g.gain); trem.start(t); trem.stop(t+dur);
+    src.connect(bp); bp.connect(g); g.connect(this.master); src.start(t); src.stop(t+dur);
+  },
+  // ---- venom spit: short wet burst ----
+  spit(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime;
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(0.18);
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.5;
+    bp.frequency.setValueAtTime(2800,t); bp.frequency.exponentialRampToValueAtTime(600,t+0.16);
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+    src.connect(bp); bp.connect(g); g.connect(this.master); src.start(t); src.stop(t+0.18);
+  },
+  // ---- venom hitting the player: dull squelch + sizzle ----
+  poisoned(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, dur=0.6;
+    const o=this.ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(70,t+0.4);
+    const og=this.ctx.createGain(); og.gain.setValueAtTime(0.45,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t+0.45);
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(dur);
+    const hp=this.ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=3000;
+    const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.3,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(hp); hp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+dur);
+  },
   // ---- card pickup ----
   pickup(){
     if(!this.ctx||this.muted) return;

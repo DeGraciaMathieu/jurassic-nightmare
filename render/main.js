@@ -33,6 +33,9 @@ state.bus.on('card:picked', ()=>SFX.pickup());
 state.bus.on('door:hit', ()=>SFX.doorHit());
 state.bus.on('heartbeat', intensity=>SFX.heartbeat(intensity));
 state.bus.on('rex:roar', ()=>{ fx.shake=Math.max(fx.shake,14); SFX.roar(false); });
+state.bus.on('dilo:hiss', ()=>SFX.hiss());
+state.bus.on('dilo:spit', ()=>SFX.spit());
+state.bus.on('player:poisoned', ()=>SFX.poisoned());
 state.bus.on('player:died', ({x,y})=>{
   fx.shake=26;
   for(let i=0;i<10;i++) fx.splats.push({x:x+(Math.random()*40-20), y:y+(Math.random()*40-20), r:6+Math.random()*14});
