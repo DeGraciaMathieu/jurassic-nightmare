@@ -60,10 +60,15 @@ hud.update(state);
 
 // ---- loop ----
 let last=performance.now();
+let stepT=0; // sprint footsteps cadence, driven by state.player.noisy
 function loop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   if(fx.shake>0) fx.shake=Math.max(0,fx.shake-dt*40);
   update(state,dt);
+  if(state.status==='play' && state.player.noisy){
+    stepT-=dt;
+    if(stepT<=0){ SFX.footstep(); stepT=0.26; }
+  } else stepT=0;
   render();
   hud.update(state);
   requestAnimationFrame(loop);

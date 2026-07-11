@@ -48,7 +48,9 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 
 ## Audio (`render/audio.js`)
 
-SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
+SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `hiss`, `spit`, `poisoned`, `footstep`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
+
+Les pas de sprint ne passent pas par le bus : la boucle de `main.js` cadence `SFX.footstep()` (toutes les 0.26 s) tant que `state.player.noisy` est vrai — le pendant sonore des anneaux de bruit.
 
 ## Ajouter un effet visuel/sonore déclenché par la logique
 

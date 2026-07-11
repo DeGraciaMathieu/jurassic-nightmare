@@ -186,6 +186,21 @@ export const SFX = {
     const rg=this.ctx.createGain(); rg.gain.setValueAtTime(1.0,t); rg.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
     src2.connect(lp); lp.connect(rg); rg.connect(this.master); src2.start(t); src2.stop(t+0.6);
   },
+  // ---- sprint footstep: soft rapid thud on the concrete ----
+  footstep(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime;
+    const f=55+Math.random()*10; // slight variation so steps don't sound stamped
+    const o=this.ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(f*2,t); o.frequency.exponentialRampToValueAtTime(f,t+0.07);
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(0.25,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.1);
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(0.05);
+    const lp=this.ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900;
+    const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.12,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    src.connect(lp); lp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+0.05);
+  },
   // ---- dilo hiss (detection): airy rattling threat ----
   hiss(){
     if(!this.ctx||this.muted) return;
