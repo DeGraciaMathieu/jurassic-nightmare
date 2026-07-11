@@ -14,7 +14,7 @@ export function playLevel(levelIdx, seed){
     botAct(state);
     update(state, DT);
     if(state.status==='levelclear' || state.status==='win') return true;
-    if(state.status==='dead') return false;
+    if(state.status==='dead' || state.status==='lifelost') return false; // one death ends the attempt, lives are a player mercy
   }
   return false;
 }
