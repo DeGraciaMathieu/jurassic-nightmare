@@ -9,15 +9,17 @@
 <body>
 <div id="wrap">
   <div id="hud">
-    <div class="item">🗺️ Secteur <b id="lvl">1</b></div>
-    <div class="item">🎫 <b id="cards">0/0</b></div>
-    <div class="item">⏱️ <b id="time">0.0</b>s</div>
-    <div class="item">⭐ <b id="score">0</b></div>
-    <div class="item">❤️ <b id="lives">3</b></div>
-    <div class="item">🔥 <b id="lures">3</b></div>
-    <div class="item"><button id="throwbtn" title="Lancer un flare (Espace)">🔥</button></div>
-    <div class="item"><button id="padtoggle" title="Afficher/masquer le pad tactile">🎮</button></div>
-    <div class="item"><button id="mute" title="Son on/off">🔊</button></div>
+    <div class="stat"><span class="lbl">Secteur</span><b id="lvl">1/3</b></div>
+    <div class="stat"><span class="lbl">Cartes</span><span class="pips pips--cards" id="cards"></span></div>
+    <div class="stat"><span class="lbl">Vies</span><span class="pips pips--lives" id="lives"></span></div>
+    <div class="stat"><span class="lbl">Flares</span><span class="pips pips--flares" id="lures"></span></div>
+    <div class="stat"><span class="lbl">Temps</span><b id="time">0.0s</b></div>
+    <div class="stat"><span class="lbl">Score</span><b id="score">0000</b></div>
+    <div class="hud-btns">
+      <button id="throwbtn" title="Lancer un flare (Espace)">🔥</button>
+      <button id="padtoggle" title="Afficher/masquer le pad tactile">🎮</button>
+      <button id="mute" title="Son on/off">🔊</button>
+    </div>
   </div>
   <div id="debug" hidden>
     <span>🐞 DEBUG</span>
