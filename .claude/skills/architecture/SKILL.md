@@ -21,7 +21,8 @@ Deux couches ES modules, dépendance unidirectionnelle : `render/` importe `src/
 | `src/level.js` | `loadLevel(state, i)` : génération + placement ; `cardsLeft` | config, rng, grid |
 | `src/player.js` | `updatePlayer` (mouvement, sprint, dissimulation), `throwLure`, `pickupCards` | config, physics |
 | `src/lures.js` | `updateLures` (vol/atterrissage), `attractRexes` | config, physics |
-| `src/rex.js` | `updateRexes` (IA complète), `nearestRexDist`, `dangerLevel` | config, grid, physics, doors |
+| `src/rex.js` | `updateRexes` (IA complète), `dangerLevel` (rexes + dilos) | config, grid, physics, doors |
+| `src/dilo.js` | `updateDilos` (traque + crachat), `updateVenoms` (globs + poison) | config, grid, physics, doors |
 | `src/app.js` | `createApp`, `update(state, dt)`, `startGame`, `nextLevel`, `die` | tout `src/` |
 
 ## Modules `render/`
@@ -44,13 +45,13 @@ Deux couches ES modules, dépendance unidirectionnelle : `render/` importe `src/
 | `levelIdx`, `score`, `levelTime` | progression |
 | `grid` | matrice `ROWS×COLS`, `0` = ouvert, `1` = mur |
 | `player` | `{x, y, fx, fy, hidden}` (fx/fy = facing) |
-| `exit`, `cards`, `rexes`, `doors`, `doorMap`, `grassSet`, `lures` | entités du niveau (reset par `loadLevel`) |
-| `lureCount`, `throwCD`, `stamina`, `exhausted`, `visionR`, `scareT`, `hbTimer` | compteurs de gameplay |
+| `exit`, `cards`, `rexes`, `dilos`, `doors`, `doorMap`, `grassSet`, `lures`, `venoms` | entités du niveau (reset par `loadLevel`) |
+| `lureCount`, `throwCD`, `stamina`, `exhausted`, `visionR`, `poisonT`, `scareT`, `hbTimer` | compteurs de gameplay |
 | `keys`, `touchTarget` | entrées, écrites par `render/input.js` |
 | `bus`, `rng` | injectés à la création |
 
 Ordre des updates dans `update(state, dt)` (`src/app.js`) — à respecter :
-`updatePlayer → updateDoors → updateLures → pickupCards → updateRexes` puis heartbeat et test de sortie.
+`updatePlayer → updateDoors → updateLures → pickupCards → updateRexes → updateDilos → updateVenoms` puis heartbeat et test de sortie.
 
 ## Événements du bus (src → render, abonnements dans `render/main.js`)
 
@@ -58,6 +59,9 @@ Ordre des updates dans `update(state, dt)` (`src/app.js`) — à respecter :
 |---|---|---|
 | `rex:roar` | — | `src/rex.js` |
 | `door:hit` | — | `src/rex.js` |
+| `dilo:hiss` | — | `src/dilo.js` |
+| `dilo:spit` | — | `src/dilo.js` |
+| `player:poisoned` | — | `src/dilo.js` |
 | `card:picked` | — | `src/player.js` |
 | `lure:thrown` | — | `src/player.js` |
 | `heartbeat` | intensité 0..1 | `src/app.js` |

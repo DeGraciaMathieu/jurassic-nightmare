@@ -6,7 +6,7 @@ auto_invoke: true
 
 # IA des prédateurs & portes de sécurité
 
-Toute l'IA vit dans `src/rex.js` `updateRexes(state, dt)` — retourne `true` quand un rex capture le joueur ; `src/app.js` appelle alors `die(state)` et interrompt la frame.
+Deux prédateurs : le **rex** (`src/rex.js` `updateRexes`) et le **dilophosaure** (`src/dilo.js` `updateDilos`, attaquant à distance). Chaque update retourne `true` quand la bête capture le joueur ; `src/app.js` appelle alors `die(state)` et interrompt la frame. Les deux partagent la même perception, les mêmes priorités de but et la même errance.
 
 ## Perception
 
@@ -41,10 +41,23 @@ Cellule cible `(tc, tr)` ; snap au centre à < 2 px puis choix du pas suivant pa
 | Engagement | pendant le battage, `alert = max(alert, 0.5)` : le rex reste engagé même prey hors de vue |
 | Capture | distance **pré-mouvement** < `RR + PR − 3` (23 px) |
 
+## Le dilophosaure (`src/dilo.js`)
+
+| Règle | Implémentation |
+|---|---|
+| Où | secteur 2 uniquement (`LEVELS[1]` : `rex = 1`, `dilo = 1`) |
+| Détection | comme le rex, mais émet `dilo:hiss` (cooldown `hissCD` 2.5) au lieu de rugir |
+| Attaque à distance | en chasse, à vue et à moins de `DILO_SPIT_RANGE=140` : il **s'arrête**, fait face et crache (`DILO_SPIT_CD=1.6`, `bus 'dilo:spit'`, `spitT=0.35` pour la collerette côté rendu) |
+| Venin | `state.venoms` : globs à `VENOM_SPEED=240` px/s, ligne droite visée au tir ; s'écrasent sur murs/portes fermées ; touchent à `PR+5` |
+| Poison | `state.poisonT = POISON_DURATION=3` s : torche ×`POISON_VISION=0.5` et vitesse ×`POISON_SLOW=0.6` (lerp dans `updatePlayer`), `bus 'player:poisoned'` |
+| Portes | le bloquent **toujours** (`doorBlocksRex` dans son bfs et son errance) — il ne les défonce jamais |
+| Leurres / herbe | mêmes règles que le rex (`attractRexes` couvre les deux, `HIDE_SIGHT` aussi) |
+| Contact | distance pré-mouvement < `DILO_R + PR − 3` (20 px) → mort |
+
 ## Modifier ou ajouter un comportement
 
 1. Constantes → `src/config.js` (globales) ou `LEVELS` (par secteur).
-2. Champs persistants du rex → le spawn dans `src/level.js` **et** le helper `addRex` de `test/rex.test.js` / `test/doors.test.js`.
-3. Logique → `updateRexes`, en respectant l'ordre des priorités de but ci-dessus.
-4. Effet audio/visuel → `bus.emit` dans `src/rex.js` + abonnement dans `render/main.js`.
-5. Test macro → `test/rex.test.js` ou `test/doors.test.js` : `arena()` + `addRex`/`addDoor`, forcer l'état (`chasing`, `seenC/seenR`) à la main pour isoler le comportement.
+2. Champs persistants de la bête → le spawn dans `src/level.js` **et** les helpers `addRex`/`addDilo` des tests concernés.
+3. Logique → `updateRexes` / `updateDilos`, en respectant l'ordre des priorités de but ci-dessus.
+4. Effet audio/visuel → `bus.emit` dans le module + abonnement dans `render/main.js`.
+5. Test macro → `test/rex.test.js`, `test/dilo.test.js` ou `test/doors.test.js` : `arena()` + `addRex`/`addDilo`/`addDoor`, forcer l'état (`chasing`, `seenC/seenR`) à la main pour isoler le comportement.

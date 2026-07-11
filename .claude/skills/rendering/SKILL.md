@@ -17,7 +17,9 @@ auto_invoke: true
 
 ## Ordre des couches de `drawWorld`
 
-sol → grime → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → sang (`fx.splats`) → rexes → joueur → marqueur « CACHÉ »
+sol → grime → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → joueur → marqueur « CACHÉ »
+
+Après l'obscurité : `drawPoison()` (vignette verte pulsée tant que `state.poisonT > 0`) puis `drawHeartbeat()`. Les yeux qui luisent dans le noir couvrent rexes (rouges) et dilos (verts).
 
 ## Obscurité (`drawDarkness`)
 
@@ -32,6 +34,9 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 | `door:hit` | `SFX.doorHit()` |
 | `heartbeat` (intensité) | `SFX.heartbeat(intensité)` |
 | `rex:roar` | `fx.shake ≥ 14` + `SFX.roar(false)` |
+| `dilo:hiss` | `SFX.hiss()` |
+| `dilo:spit` | `SFX.spit()` (la collerette du sprite s'ouvre via `dilo.spitT`) |
+| `player:poisoned` | `SFX.poisoned()` (la vignette verte et la torche réduite lisent `state.poisonT`/`visionR`) |
 | `player:died` `{x,y}` | `fx.shake = 26` + 10 éclaboussures + `SFX.raptorScream()` + `stopAmbient()` |
 | `game:over` `{level,score}` | overlay défaite (`html.deathOverlay`) |
 | `level:cleared` `{level,time,bonus,score}` | `stopAmbient()` + `chime(false)` + overlay |

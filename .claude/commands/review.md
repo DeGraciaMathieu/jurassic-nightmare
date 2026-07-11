@@ -27,7 +27,7 @@ description: Revue complète du diff courant — conventions, tests, maintenabil
    **Cohérence système**
    - Intégration avec l'existant : réutilise `grid`/`physics`/le bus plutôt que réinventer.
    - Forme de l'état et des données conforme (`state`, clés `"c,r"`, positions px vs cases).
-   - Patterns respectés : ordre des updates (`player → doors → lures → pickup → rexes`), priorités de but de l'IA, ordre des couches de dessin.
+   - Patterns respectés : ordre des updates (`player → doors → lures → pickup → rexes → dilos → venins`), priorités de but de l'IA, ordre des couches de dessin.
    - Doc vivante synchrone : overlay d'`index.html` (règles, touches), CLAUDE.md, tables des skills.
 
 4. Lance `npm test` et rapporte le résultat exact.
