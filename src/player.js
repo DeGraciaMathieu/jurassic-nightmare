@@ -50,7 +50,7 @@ export function updatePlayer(state,dt){
 // beasts in earshot head for the noise without switching to a chase
 function noise(state,pc,pr,range,alert){
   const { player } = state;
-  for(const beast of [...state.rexes, ...state.dilos]){
+  for(const beast of [...state.rexes, ...state.dilos, ...state.raptors]){
     if(Math.hypot(beast.x-player.x,beast.y-player.y)<range){
       beast.alert=Math.max(beast.alert,alert);
       beast.seenC=pc; beast.seenR=pr;

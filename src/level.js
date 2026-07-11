@@ -34,6 +34,21 @@ export function loadLevel(state,i){
                  seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
                  hissCD:0, lureTimer:0, lureX:null, lureY:null, spitCD:0, spitT:0 });
   }
+  // raptor pack: fixed roles, spawned like rexes
+  const raptors = state.raptors = [];
+  if(cfg.raptor){
+    const ROLES=['driver','flanker','feinter'];
+    const raptorPool = shuffle(state.rng,openCells(grid)).filter(o=>cellDist(o,start)>6);
+    for(let k=0;k<cfg.raptor && raptorPool.length;k++){
+      const cell=raptorPool.shift(); const p=cellCenter(cell.c,cell.r);
+      raptors.push({ x:p.x,y:p.y, c:cell.c,r:cell.r, tc:cell.c,tr:cell.r,
+                     dir:1, role:ROLES[k%ROLES.length], chasing:false, alert:0,
+                     seenC:cell.c, seenR:cell.r, prevC:cell.c, prevR:cell.r,
+                     barkCD:0, lureTimer:0, lureX:null, lureY:null,
+                     feints:0, feintT:0, mode:'hold', lostT:0, sees:false, dist:1e9 });
+    }
+  }
+
   // tall grass hiding patches
   const grassSet = state.grassSet = new Set();
   const gpool=shuffle(state.rng,openCells(grid)).filter(o=>!(o.c===start.c&&o.r===start.r)&&!(o.c===goal.c&&o.r===goal.r));
@@ -49,6 +64,7 @@ export function loadLevel(state,i){
     if(cards.some(cd=>Math.floor(cd.x/TILE)===o.c && Math.floor(cd.y/TILE)===o.r)) return false;
     if(rexes.some(rx=>rx.c===o.c && rx.r===o.r)) return false;
     if(dilos.some(dl=>dl.c===o.c && dl.r===o.r)) return false;
+    if(raptors.some(rp=>rp.c===o.c && rp.r===o.r)) return false;
     const h = !wall(o.c-1,o.r) && !wall(o.c+1,o.r) && wall(o.c,o.r-1) && wall(o.c,o.r+1);
     const v = !wall(o.c,o.r-1) && !wall(o.c,o.r+1) && wall(o.c-1,o.r) && wall(o.c+1,o.r);
     return h||v;

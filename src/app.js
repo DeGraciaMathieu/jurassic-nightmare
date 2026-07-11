@@ -7,12 +7,13 @@ import { updateLures } from './lures.js';
 import { updateDoors } from './doors.js';
 import { updateRexes, dangerLevel } from './rex.js';
 import { updateDilos, updateVenoms } from './dilo.js';
+import { updateRaptors } from './raptor.js';
 
 export function createApp({ rng }){
   return {
     status:'menu', // menu | play | scare | dead | levelclear | win
     levelIdx:0, score:0, levelTime:0,
-    grid:null, player:null, exit:null, cards:[], rexes:[], dilos:[], cfg:null,
+    grid:null, player:null, exit:null, cards:[], rexes:[], dilos:[], raptors:[], cfg:null,
     visionR:160, scareT:0, hbTimer:0, venoms:[], poisonT:0,
     lures:[], lureCount:3, grassSet:new Set(), throwCD:0, decor:[],
     doors:[], doorMap:new Map(),
@@ -53,6 +54,7 @@ export function update(state,dt){
   pickupCards(state);
   if(updateRexes(state,dt)){ die(state); return; }
   if(updateDilos(state,dt)){ die(state); return; }
+  if(updateRaptors(state,dt)){ die(state); return; }
   updateVenoms(state,dt);
 
   // heartbeat driven by nearest threat

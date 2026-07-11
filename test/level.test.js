@@ -18,6 +18,7 @@ test('chaque niveau place les effectifs prévus par sa configuration', () => {
     assert.equal(state.cards.length, cfg.cards);
     assert.equal(state.rexes.length, cfg.rex);
     assert.equal(state.dilos.length, cfg.dilo);
+    assert.equal(state.raptors.length, cfg.raptor);
     assert.ok(state.doors.length <= cfg.doors);
     assert.ok(state.grassSet.size > 0);
     assert.equal(state.doorMap.size, state.doors.length);
@@ -43,6 +44,18 @@ test('cartes et rexes ne spawnent pas sur le joueur', () => {
     const volier = freshLevel(1,seed);
     for(const dl of volier.dilos)
       assert.ok(cellDist({c:dl.c,r:dl.r},start) > 6);
+  }
+});
+
+test('le paddock lâche la meute : 3 raptors aux rôles fixes, zéro rex', () => {
+  for(const seed of [1,2,3]){
+    const state = freshLevel(2,seed);
+    assert.equal(state.rexes.length, 0);
+    assert.equal(state.raptors.length, 3);
+    assert.deepEqual(state.raptors.map(r=>r.role), ['driver','flanker','feinter']);
+    assert.ok(state.doors.length <= 6);
+    for(const rp of state.raptors)
+      assert.ok(cellDist({c:rp.c,r:rp.r},{c:1,r:1}) > 6, 'pas sur le joueur');
   }
 });
 

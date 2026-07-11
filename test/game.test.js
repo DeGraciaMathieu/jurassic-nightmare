@@ -45,7 +45,7 @@ test('dernier secteur franchi → victoire', () => {
   startGame(state,1); nextLevel(state); nextLevel(state);
   assert.equal(state.levelIdx, 2);
   let won=null; state.bus.on('game:won',p=>won=p);
-  state.rexes=[];
+  state.rexes=[]; state.raptors=[];
   for(const c of state.cards) c.taken=true;
   state.player.x=state.exit.x; state.player.y=state.exit.y;
   update(state,1/60);

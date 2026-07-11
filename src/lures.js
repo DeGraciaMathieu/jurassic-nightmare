@@ -2,8 +2,8 @@ import { TILE, W, H, LURE_HEAR } from './config.js';
 import { circleHitsWalls } from './physics.js';
 
 export function attractRexes(state,L){
-  // the noise pulls rexes and dilos alike off your trail
-  for(const beast of [...state.rexes, ...state.dilos]){
+  // the noise pulls rexes, dilos and raptors alike off your trail
+  for(const beast of [...state.rexes, ...state.dilos, ...state.raptors]){
     if(Math.hypot(beast.x-L.x, beast.y-L.y) < LURE_HEAR){
       beast.lureX=L.x; beast.lureY=L.y; beast.lureTimer=L.life;
       beast.chasing=false; beast.alert=0;

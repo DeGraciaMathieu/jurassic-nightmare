@@ -77,7 +77,7 @@ export function updateRexes(state,dt){
 
 export function dangerLevel(state){
   let nearest=Infinity;
-  for(const rex of state.rexes) nearest=Math.min(nearest,Math.hypot(rex.x-state.player.x,rex.y-state.player.y));
-  for(const d of state.dilos) nearest=Math.min(nearest,Math.hypot(d.x-state.player.x,d.y-state.player.y));
+  for(const b of [...state.rexes, ...state.dilos, ...state.raptors])
+    nearest=Math.min(nearest,Math.hypot(b.x-state.player.x,b.y-state.player.y));
   return Math.max(0,Math.min(1,1-nearest/(state.visionR*2.4)));
 }
