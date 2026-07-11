@@ -18,7 +18,7 @@ auto_invoke: true
 | Placement cartes | `loadLevel` | `shuffle(openCells)`, `cellDist(start) > 3` et `cellDist(goal) > 1` |
 | Placement rexes | `loadLevel` | `cellDist(start) > 6` ; le spawn est l'objet rex complet (`c,r,tc,tr,chasing,alert,seen*,prev*,roarCD,lureTimer,lure*,hitCD`) |
 | Placement dilos | `loadLevel` | `cfg.dilo` par secteur, mêmes contraintes que les rexes ; champs propres : `hissCD,spitCD,spitT` |
-| Placement raptors | `loadLevel` | `cfg.raptor` (secteur 3), mêmes contraintes que les rexes ; rôles fixes dans l'ordre `driver`/`flanker`/`feinter` ; champs propres : `role,barkCD,feints,feintT,mode,lostT` ; le braid du secteur 3 (0.12) garantit des boucles pour la prise à revers |
+| Placement raptors | `loadLevel` | `cfg.raptor` (secteur 3), mêmes contraintes que les rexes ; rôles fixes dans l'ordre `feinter`/`flanker`/`feinter` ; champs propres : `role,barkCD,feints,feintT,mode,lostT,flankC,flankR` ; le braid du secteur 3 (0.12) garantit des boucles pour les itinéraires d'interception du flanqueur |
 | Herbes | `loadLevel` → `state.grassSet` | `Set` de clés `"c,r"`, 18 max, jamais sur départ/sortie |
 | Portes | `loadLevel` → `state.doors` + `state.doorMap` | seulement sur des goulets de couloir (horizontal ou vertical), jamais sur herbe/carte/rex, espacement `cellDist ≥ 4`, plafond `cfg.doors` |
 | Décors | `loadLevel` → `state.decor` | 15 max (20 % des cases éligibles), 5 types (`blood/bones/crate/rubble/crack`), jamais sur départ/sortie/herbe/porte/carte ; caisses et squelettes craquent sous les pas (`src/player.js`) |

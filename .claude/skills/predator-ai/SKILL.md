@@ -59,10 +59,9 @@ Cellule cible `(tc, tr)` ; snap au centre à < 2 px puis choix du pas suivant pa
 
 | Règle | Implémentation |
 |---|---|
-| Où | secteur 3 uniquement (`LEVELS[2]` : `raptor = 3`, `rex = 0`) ; rôles fixes au spawn, dans l'ordre : `driver`, `flanker`, `feinter` |
+| Où | secteur 3 uniquement (`LEVELS[2]` : `raptor = 3`, `rex = 0`) ; rôles fixes au spawn, dans l'ordre : `feinter`, `flanker`, `feinter` |
 | Perception de meute | un raptor qui voit le joueur ⇒ toute la meute reçoit `alert=2.2` + `seenC/seenR` chaque frame ; `chasing` reste individuel (vue propre) ; premier engagement → `bus.emit('raptor:bark')` (cooldown 2.5) |
-| Rabatteur (`driver`) | chasse frontale à la rex, `RAPTOR_CHASE=175` (< chase rex 188 : rattrapable) |
-| Flanqueur (`flanker`) | vise la 1re cellule ouverte à `FLANK_BEHIND=3`→1 case(s) derrière le facing du joueur et s'y poste ; à < `RAPTOR_ENGAGE_DIST=60` px avec LOS il charge directement |
+| Flanqueur (`flanker`) | vise la 1re cellule ouverte à `FLANK_AHEAD=4`→2 case(s) devant le cap du joueur et s'y poste ; son BFS évite la case (vue) du joueur pour emprunter les boucles — sans contournement possible, repli en chasse directe ; hors de vue il tient son cap mémorisé (`flankC/flankR`) tant que `alert` court ; à < `RAPTOR_ENGAGE_DIST=60` px il charge directement |
 | Feinteur (`feinter`) | tient à `RAPTOR_HOLD_DIST=140` px (recule si le joueur approche), `RAPTOR_FEINTS=2` charges avortées à `RAPTOR_ABORT_DIST=60` px, puis vraie charge à `RAPTOR_LUNGE=230` (> sprint 210) ; vue perdue > `RAPTOR_LOST_SIGHT=1` s → cycle et compteur remis à zéro |
 | Portes | jamais défoncées (aucun `door:hit`) ; bloqué seulement si `open < RAPTOR_DOOR_SLIP=0.4` (`doorBlocksRaptor`) — il se faufile par une porte entrouverte et la cale (wedge) comme un rex |
 | Leurres / bruit / herbe | mêmes règles que rex/dilo (`attractRexes`, `noise`, `HIDE_SIGHT`) |
