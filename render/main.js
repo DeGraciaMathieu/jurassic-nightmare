@@ -24,7 +24,7 @@ const els = {
 };
 
 const state = createApp({ rng: mulberry32(12345) });
-const fx = { shake:0, splats:[], pulse:0, dark:true }; // render-side effects (screen shake, blood, page danger halo) + debug darkness flag
+const fx = { shake:0, splats:[], pulse:0, crunchT:0, dark:true }; // render-side effects (screen shake, blood, page danger halo, crunch noise rings) + debug darkness flag
 const dangerGlow = document.getElementById('dangerGlow');
 const hud = createHud(els);
 const render = createRenderer(canvas, state, fx);
@@ -32,7 +32,7 @@ const render = createRenderer(canvas, state, fx);
 // the logic emits events; sounds and visual effects hook onto them here
 state.bus.on('lure:thrown', ()=>SFX.lureThrow());
 state.bus.on('card:picked', ()=>SFX.pickup());
-state.bus.on('decor:crunch', ()=>SFX.crunch());
+state.bus.on('decor:crunch', ()=>{ SFX.crunch(); fx.crunchT=0.6; });
 state.bus.on('door:hit', ()=>SFX.doorHit());
 state.bus.on('door:broken', ()=>SFX.doorBreak());
 state.bus.on('heartbeat', intensity=>{ SFX.heartbeat(intensity); fx.pulse=Math.max(fx.pulse,intensity); });
@@ -91,6 +91,7 @@ function loop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   if(fx.shake>0) fx.shake=Math.max(0,fx.shake-dt*40);
   if(fx.pulse>0) fx.pulse=Math.max(0,fx.pulse-dt*0.8); // fades between two heartbeats
+  if(fx.crunchT>0) fx.crunchT=Math.max(0,fx.crunchT-dt);
   dangerGlow.style.opacity=fx.pulse.toFixed(3);
   update(state,dt);
   if(state.status==='play' && state.player.noisy){

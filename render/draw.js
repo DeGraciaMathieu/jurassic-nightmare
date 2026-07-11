@@ -237,8 +237,8 @@ export function createRenderer(canvas, state, fx){
     for(const rap of state.raptors) drawRaptor(rap);
     // player
     drawPlayer();
-    // sprint noise rings
-    if(state.status==='play' && player.noisy){
+    // noise rings: sprint footsteps and decor crunching underfoot
+    if(state.status==='play' && (player.noisy || fx.crunchT>0)){
       const t=performance.now()/1000;
       for(let k=0;k<2;k++){ const rr2=((t*1.6+k*0.5)%1)*34;
         ctx.strokeStyle=`rgba(210,200,170,${0.3*(1-rr2/34)})`; ctx.lineWidth=1.5;
