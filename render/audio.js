@@ -201,6 +201,25 @@ export const SFX = {
     const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.12,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
     src.connect(lp); lp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+0.05);
   },
+  // ---- debris crunch: dry wood/bone snap underfoot ----
+  crunch(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime;
+    // two quick snaps, the second duller
+    [0,0.05].forEach((off,i)=>{
+      const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(0.07);
+      const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.2;
+      bp.frequency.setValueAtTime(i?850:1600,t+off);
+      const g=this.ctx.createGain(); g.gain.setValueAtTime(i?0.26:0.38,t+off);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+off+0.07);
+      src.connect(bp); bp.connect(g); g.connect(this.master); src.start(t+off); src.stop(t+off+0.07);
+    });
+    // low body of the thing giving way
+    const o=this.ctx.createOscillator(); o.type='triangle';
+    o.frequency.setValueAtTime(170,t); o.frequency.exponentialRampToValueAtTime(60,t+0.12);
+    const og=this.ctx.createGain(); og.gain.setValueAtTime(0.3,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t+0.15);
+  },
   // ---- dilo hiss (detection): airy rattling threat ----
   hiss(){
     if(!this.ctx||this.muted) return;

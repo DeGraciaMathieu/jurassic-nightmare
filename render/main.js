@@ -30,6 +30,7 @@ const render = createRenderer(canvas, state, fx);
 // the logic emits events; sounds and visual effects hook onto them here
 state.bus.on('lure:thrown', ()=>SFX.lureThrow());
 state.bus.on('card:picked', ()=>SFX.pickup());
+state.bus.on('decor:crunch', ()=>SFX.crunch());
 state.bus.on('door:hit', ()=>SFX.doorHit());
 state.bus.on('door:broken', ()=>SFX.doorBreak());
 state.bus.on('heartbeat', intensity=>SFX.heartbeat(intensity));

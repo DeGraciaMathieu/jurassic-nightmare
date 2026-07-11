@@ -16,36 +16,19 @@ export function createRenderer(canvas, state, fx){
 
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
-  // ---- corridor set dressing (purely visual) ----
-  // rebuilt whenever the level grid changes; seeded from the maze layout so a
-  // given level always dresses the same, without touching the game rng
+  // ---- corridor set dressing ----
+  // items and positions come from state.decor (crates and skeletons crunch
+  // underfoot — src/player.js); only the visual jitter is seeded here, from
+  // the maze layout, without touching the game rng
   let decorGrid=null, decorItems=[];
   function buildDecor(){
     const g=state.grid;
     let h=(state.levelIdx+1)*2654435761;
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) h=(h*31+g[r][c]+r*7+c)|0;
     const rng=mulberry32(h);
-    const cells=[];
-    for(let r=1;r<ROWS-1;r++)for(let c=1;c<COLS-1;c++){
-      if(g[r][c]!==0) continue;
-      if(c===1&&r===1) continue;
-      if(c===state.exit.c&&r===state.exit.r) continue;
-      if(state.grassSet.has(c+','+r)) continue;
-      if(state.doorMap.has(c+','+r)) continue;
-      if(state.cards.some(cd=>Math.floor(cd.x/TILE)===c&&Math.floor(cd.y/TILE)===r)) continue;
-      cells.push({c,r});
-    }
-    const TYPES=['blood','bones','crate','rubble','crack'];
-    const items=[];
-    const count=Math.min(15,Math.floor(cells.length*0.2));
-    for(let i=0;i<count&&cells.length;i++){
-      const cell=cells.splice(Math.floor(rng()*cells.length),1)[0];
-      items.push({ type:TYPES[Math.floor(rng()*TYPES.length)],
-                   x:(cell.c+0.5)*TILE, y:(cell.r+0.5)*TILE,
-                   ox:(rng()-0.5)*10, oy:(rng()-0.5)*10,
-                   rot:rng()*Math.PI*2, s:0.8+rng()*0.5, v:rng() });
-    }
-    return items;
+    return state.decor.map(d=>({ type:d.type, x:d.x, y:d.y,
+                                 ox:(rng()-0.5)*10, oy:(rng()-0.5)*10,
+                                 rot:rng()*Math.PI*2, s:0.8+rng()*0.5, v:rng() }));
   }
 
   // small irregular pentagon, deterministic per seed — no per-frame randomness
