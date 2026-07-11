@@ -11,7 +11,7 @@ function arena(seed=1){
   loadLevel(state,0);
   state.status='play';
   state.grid = Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>(r===0||c===0||r===ROWS-1||c===COLS-1)?1:0));
-  state.rexes=[]; state.dilos=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set();
+  state.rexes=[]; state.dilos=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set(); state.decor=[];
   state.player.x=(COLS/2)*TILE; state.player.y=(ROWS/2)*TILE; // cellule (9,6)
   return state;
 }

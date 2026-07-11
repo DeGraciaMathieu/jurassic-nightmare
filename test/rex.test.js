@@ -12,7 +12,7 @@ function arena(seed=1){
   loadLevel(state,0);
   state.status='play';
   state.grid = Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>(r===0||c===0||r===ROWS-1||c===COLS-1)?1:0));
-  state.rexes=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set();
+  state.rexes=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set(); state.decor=[];
   state.player.x=(COLS/2)*TILE; state.player.y=(ROWS/2)*TILE; // cellule (9,6)
   return state;
 }
@@ -93,6 +93,30 @@ test('marcher reste silencieux', () => {
   const rex = addRex(state,14,6);
   state.keys['a']=true; // marche, sans sprint
   step(state,0.3);
+  assert.equal(rex.alert, 0);
+});
+
+test('marcher sur une caisse craque : un rex hors de vue vient enquêter', () => {
+  const state = arena();
+  state.decor.push({ type:'crate', c:8, r:6, x:8.5*TILE, y:6.5*TILE });
+  const rex = addRex(state,14,6); // hors de portée de vue (145), à portée du craquement (260)
+  let crunches=0; state.bus.on('decor:crunch',()=>crunches++);
+  state.keys['a']=true; // marche (sans sprint) vers la caisse
+  step(state,0.3);
+  assert.equal(crunches, 1);
+  assert.equal(rex.chasing, false, 'il ne chasse pas, il enquête');
+  assert.ok(rex.alert > 0, 'il a entendu le craquement');
+  assert.equal(rex.seenC, 8, 'il vise la caisse');
+});
+
+test('un craquement trop lointain reste inaudible', () => {
+  const state = arena();
+  state.decor.push({ type:'bones', c:8, r:6, x:8.5*TILE, y:6.5*TILE });
+  const rex = addRex(state,17,6); // à ~340 px du craquement, hors de portée d'ouïe (260)
+  let crunches=0; state.bus.on('decor:crunch',()=>crunches++);
+  state.keys['a']=true;
+  step(state,0.3);
+  assert.equal(crunches, 1, 'le craquement a bien eu lieu');
   assert.equal(rex.alert, 0);
 });
 

@@ -62,6 +62,20 @@ export function loadLevel(state,i){
     doors.push(D); doorMap.set(o.c+','+o.r,D);
   }
 
+  // corridor set dressing; crates and skeletons crunch underfoot (updatePlayer)
+  const DECOR_TYPES=['blood','bones','crate','rubble','crack'];
+  const decor = state.decor = [];
+  const dcPool=shuffle(state.rng,openCells(grid)).filter(o=>{
+    if(o.c===start.c&&o.r===start.r) return false;
+    if(o.c===goal.c&&o.r===goal.r) return false;
+    if(grassSet.has(o.c+','+o.r) || doorMap.has(o.c+','+o.r)) return false;
+    return !cards.some(cd=>Math.floor(cd.x/TILE)===o.c && Math.floor(cd.y/TILE)===o.r);
+  });
+  for(let k=0;k<Math.min(15,Math.floor(dcPool.length*0.2));k++){
+    const cell=dcPool[k]; const p=cellCenter(cell.c,cell.r);
+    decor.push({ type:DECOR_TYPES[Math.floor(state.rng()*DECOR_TYPES.length)], c:cell.c, r:cell.r, x:p.x, y:p.y });
+  }
+
   state.lures=[]; state.lureCount=3; state.throwCD=0;
   state.venoms=[]; state.poisonT=0;
   state.stamina=STAMINA_MAX; state.exhausted=false;

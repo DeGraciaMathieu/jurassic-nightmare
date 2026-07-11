@@ -46,6 +46,21 @@ test('cartes et rexes ne spawnent pas sur le joueur', () => {
   }
 });
 
+test('les décors évitent départ, sortie, herbe, portes et cartes', () => {
+  LEVELS.forEach((_,i) => {
+    const state = freshLevel(i);
+    assert.ok(state.decor.length > 0);
+    for(const d of state.decor){
+      assert.equal(state.grid[d.r][d.c], 0, 'case ouverte');
+      assert.ok(!(d.c===1&&d.r===1), 'pas sur le départ');
+      assert.ok(!(d.c===state.exit.c&&d.r===state.exit.r), 'pas sur la sortie');
+      assert.ok(!state.grassSet.has(d.c+','+d.r), "pas dans l'herbe");
+      assert.ok(!state.doorMap.has(d.c+','+d.r), 'pas sur une porte');
+      assert.ok(!state.cards.some(cd=>Math.floor(cd.x/TILE)===d.c && Math.floor(cd.y/TILE)===d.r), 'pas sur une carte');
+    }
+  });
+});
+
 test('toutes les cartes sont à ramasser au départ', () => {
   const state = freshLevel(1);
   assert.equal(cardsLeft(state), state.cards.length);

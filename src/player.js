@@ -1,4 +1,4 @@
-import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE, POISON_VISION, POISON_SLOW, SPRINT_HEAR, SPRINT_ALERT } from './config.js';
+import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE, POISON_VISION, POISON_SLOW, SPRINT_HEAR, SPRINT_ALERT, CRUNCH_HEAR, CRUNCH_ALERT } from './config.js';
 import { movePlayerAxis } from './physics.js';
 
 export function updatePlayer(state,dt){
@@ -25,22 +25,37 @@ export function updatePlayer(state,dt){
     if(my!==0) movePlayerAxis(state,0,my);
   }
 
+  const pc=Math.floor(player.x/TILE), pr=Math.floor(player.y/TILE);
   // sprint footsteps carry: nearby predators come to investigate the noise
   // (an active flare stays louder — lure investigation keeps goal priority)
   player.noisy = sprinting;
-  if(sprinting){
-    const pc=Math.floor(player.x/TILE), pr=Math.floor(player.y/TILE);
-    for(const beast of [...state.rexes, ...state.dilos]){
-      if(Math.hypot(beast.x-player.x,beast.y-player.y)<SPRINT_HEAR){
-        beast.alert=Math.max(beast.alert,SPRINT_ALERT);
-        beast.seenC=pc; beast.seenR=pr;
-      }
+  if(sprinting) noise(state,pc,pr,SPRINT_HEAR,SPRINT_ALERT);
+
+  // stepping onto a crate or skeleton cracks it: the noise draws predators in
+  const tileKey=pc+','+pr;
+  if(tileKey!==player.tileKey){
+    player.tileKey=tileKey;
+    const it=state.decor.find(d=>d.c===pc && d.r===pr);
+    if(it && (it.type==='crate'||it.type==='bones')){
+      state.bus.emit('decor:crunch');
+      noise(state,pc,pr,CRUNCH_HEAR,CRUNCH_ALERT);
     }
   }
 
   state.throwCD=Math.max(0,state.throwCD-dt);
   // hidden while standing in tall grass
-  player.hidden = state.grassSet.has(Math.floor(player.x/TILE)+','+Math.floor(player.y/TILE));
+  player.hidden = state.grassSet.has(tileKey);
+}
+
+// beasts in earshot head for the noise without switching to a chase
+function noise(state,pc,pr,range,alert){
+  const { player } = state;
+  for(const beast of [...state.rexes, ...state.dilos]){
+    if(Math.hypot(beast.x-player.x,beast.y-player.y)<range){
+      beast.alert=Math.max(beast.alert,alert);
+      beast.seenC=pc; beast.seenR=pr;
+    }
+  }
 }
 
 export function throwLure(state){

@@ -14,7 +14,7 @@ export function createApp({ rng }){
     levelIdx:0, score:0, levelTime:0,
     grid:null, player:null, exit:null, cards:[], rexes:[], dilos:[], cfg:null,
     visionR:160, scareT:0, hbTimer:0, venoms:[], poisonT:0,
-    lures:[], lureCount:3, grassSet:new Set(), throwCD:0,
+    lures:[], lureCount:3, grassSet:new Set(), throwCD:0, decor:[],
     doors:[], doorMap:new Map(),
     stamina:STAMINA_MAX, exhausted:false,
     keys:{}, touchTarget:null,

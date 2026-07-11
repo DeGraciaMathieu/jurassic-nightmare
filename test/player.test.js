@@ -13,7 +13,7 @@ function arena(seed=1){
   loadLevel(state,0);
   state.status='play';
   state.grid = Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>(r===0||c===0||r===ROWS-1||c===COLS-1)?1:0));
-  state.rexes=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set();
+  state.rexes=[]; state.cards=[]; state.doors=[]; state.doorMap=new Map(); state.grassSet=new Set(); state.decor=[];
   state.player.x=(COLS/2)*TILE; state.player.y=(ROWS/2)*TILE;
   return state;
 }
@@ -58,6 +58,33 @@ test('le joueur est caché uniquement dans les hautes herbes', () => {
   state.grassSet.add(Math.floor(state.player.x/TILE)+','+Math.floor(state.player.y/TILE));
   step(state,1/60);
   assert.equal(state.player.hidden, true);
+});
+
+test('une caisse craque à chaque entrée sur sa case, pas en continu', () => {
+  const state = arena();
+  state.decor.push({ type:'crate', c:8, r:6, x:8.5*TILE, y:6.5*TILE });
+  let crunches=0; state.bus.on('decor:crunch',()=>crunches++);
+  state.keys['a']=true; // entre sur la caisse...
+  step(state,0.3);
+  assert.equal(crunches, 1);
+  state.keys['a']=false; // ...et reste dessus
+  step(state,0.5);
+  assert.equal(crunches, 1, 'rester dessus ne craque plus');
+  state.keys['d']=true; // repart puis revient
+  step(state,0.4);
+  state.keys['d']=false; state.keys['a']=true;
+  step(state,0.4);
+  assert.equal(crunches, 2, 'revenir dessus craque à nouveau');
+});
+
+test('le sang, les gravats et les fissures ne craquent pas', () => {
+  const state = arena();
+  state.decor.push({ type:'blood', c:8, r:6, x:8.5*TILE, y:6.5*TILE });
+  state.decor.push({ type:'rubble', c:7, r:6, x:7.5*TILE, y:6.5*TILE });
+  let crunches=0; state.bus.on('decor:crunch',()=>crunches++);
+  state.keys['a']=true;
+  step(state,0.6); // traverse les deux cases décorées
+  assert.equal(crunches, 0);
 });
 
 test('lancer un flare consomme un leurre, avec temps de recharge', () => {
