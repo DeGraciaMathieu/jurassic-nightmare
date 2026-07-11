@@ -74,9 +74,12 @@ if(new URLSearchParams(location.search).has('debug')){
 }
 
 loadLevel(state,0); // maze shown behind the menu overlay
-const mazeCanvas=document.getElementById('heroMaze');
-mazeCanvas.width=innerWidth; mazeCanvas.height=innerHeight; // the menu overlay spans the viewport
-drawMenuMaze(mazeCanvas);
+// menu backdrop + dim page backdrop behind the game, both viewport-sized
+for(const id of ['heroMaze','bgMaze']){
+  const cv=document.getElementById(id);
+  cv.width=innerWidth; cv.height=innerHeight;
+  drawMenuMaze(cv);
+}
 drawMenuHero(document.getElementById('hero'));
 hud.update(state);
 
