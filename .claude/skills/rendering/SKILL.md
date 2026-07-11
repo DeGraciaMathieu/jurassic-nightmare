@@ -56,3 +56,9 @@ SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste uti
 ## Overlays & HUD
 
 Fragments → `render/html.js` (pur, retourne `{html, label}`) ; affichage → `render/hud.js` `showOverlay`/`hideOverlay`. Le texte statique du menu vit dans `index.html` : c'est la **doc vivante** des règles du jeu — la garder synchrone avec les mécaniques (règles + légende des touches).
+
+Hero du menu, deux canvas dessinés une fois au boot (`render/main.js`), masqués par `showOverlay` sur les écrans de fin comme le `h1` :
+- `#heroMaze` (`drawMenuMaze`, `render/draw.js`) : fond plein cadre (`z-index:-2`) — un labyrinthe issu du vrai `genMaze` (seed fixe 777), corridors en réseau lumineux, centre effacé en `destination-out` pour la lisibilité du texte.
+- `#hero` (`drawMenuHero`) : la tête du jumpscare (`drawRexHead` partagé) en miroir, tapie à moitié hors cadre dans le coin bas-droit (`z-index:-1`, mask-gradient, `overflow:hidden` sur `#overlay`).
+
+Attention : le sélecteur global `canvas` de `styles.css` s'applique à tout nouveau canvas (fond noir, bordure, `width:100%`) — prévoir les overrides.

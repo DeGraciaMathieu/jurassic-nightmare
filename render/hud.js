@@ -13,6 +13,8 @@ export function createHud(els){
     showOverlay({html,label}){
       els.ovtext.innerHTML=html;
       els.btn.textContent=label;
+      els.overlay.querySelector('#heroMaze').style.display='none';
+      els.overlay.querySelector('#hero').style.display='none';
       els.overlay.querySelector('h1').style.display='none';
       els.overlay.querySelector('.keys').style.display='none';
       const ps=els.overlay.querySelectorAll('p');

@@ -1,4 +1,6 @@
 import { TILE, COLS, ROWS, PR, RR, DOOR_HP, STAMINA_MAX } from '../src/config.js';
+import { genMaze, cellCenter } from '../src/grid.js';
+import { mulberry32 } from '../src/rng.js';
 import { cardsLeft } from '../src/level.js';
 import { dangerLevel } from '../src/rex.js';
 import { nextFlicker, torchRadius, flareLightRadius, eyeGlowAlpha, heartbeatAlpha, staminaColor } from './gfx.js';
@@ -250,21 +252,7 @@ export function createRenderer(canvas, state, fx){
     ctx.fillStyle=`rgba(${20+t*80},0,0,${0.6+0.3*Math.sin(t*40)})`; ctx.fillRect(0,0,W,H);
     const cx=W/2, cy=H/2, s=1+t*1.6;
     ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
-    // huge head
-    ctx.fillStyle='#3a1008'; ctx.beginPath(); ctx.ellipse(0,-10,150,120,0,0,7); ctx.fill();
-    ctx.fillStyle='#521208'; ctx.beginPath(); ctx.moveTo(-150,-10); ctx.lineTo(160,-70); ctx.lineTo(160,50); ctx.closePath(); ctx.fill();
-    // jaws
-    ctx.fillStyle='#1a0603'; ctx.beginPath(); ctx.moveTo(-120,20); ctx.quadraticCurveTo(60,60,200,30); ctx.quadraticCurveTo(60,130,-120,90); ctx.fill();
-    // teeth
-    ctx.fillStyle='#efe6d2';
-    for(let i=0;i<10;i++){ const tx=-110+i*32; ctx.beginPath(); ctx.moveTo(tx,25); ctx.lineTo(tx+12,25); ctx.lineTo(tx+6,52); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(tx,92); ctx.lineTo(tx+12,92); ctx.lineTo(tx+6,66); ctx.fill(); }
-    // eyes
-    ctx.fillStyle='#ffdd22'; ctx.shadowColor='#ff3000'; ctx.shadowBlur=30;
-    ctx.beginPath(); ctx.ellipse(-55,-45,16,22,0,0,7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(60,-55,16,22,0,0,7); ctx.fill();
-    ctx.fillStyle='#000'; ctx.shadowBlur=0;
-    ctx.fillRect(-59,-52,8,26); ctx.fillRect(56,-62,8,26);
+    drawRexHead(ctx);
     ctx.restore();
   }
 
@@ -293,4 +281,77 @@ export function createRenderer(canvas, state, fx){
     if(state.status==='play'){ ctx.fillStyle='rgba(180,70,45,0.5)'; ctx.font='italic 12px Trebuchet MS'; ctx.textAlign='left'; ctx.fillText(state.cfg.name,12,20); drawStamina(); }
     ctx.restore();
   };
+}
+
+// the monster's head, drawn around the origin (spans x -150..200, y -130..130);
+// shared by the jumpscare and the menu hero
+function drawRexHead(c){
+  // huge head
+  c.fillStyle='#3a1008'; c.beginPath(); c.ellipse(0,-10,150,120,0,0,7); c.fill();
+  c.fillStyle='#521208'; c.beginPath(); c.moveTo(-150,-10); c.lineTo(160,-70); c.lineTo(160,50); c.closePath(); c.fill();
+  // jaws
+  c.fillStyle='#1a0603'; c.beginPath(); c.moveTo(-120,20); c.quadraticCurveTo(60,60,200,30); c.quadraticCurveTo(60,130,-120,90); c.fill();
+  // teeth
+  c.fillStyle='#efe6d2';
+  for(let i=0;i<10;i++){ const tx=-110+i*32; c.beginPath(); c.moveTo(tx,25); c.lineTo(tx+12,25); c.lineTo(tx+6,52); c.fill();
+    c.beginPath(); c.moveTo(tx,92); c.lineTo(tx+12,92); c.lineTo(tx+6,66); c.fill(); }
+  // eyes
+  c.fillStyle='#ffdd22'; c.shadowColor='#ff3000'; c.shadowBlur=30;
+  c.beginPath(); c.ellipse(-55,-45,16,22,0,0,7); c.fill();
+  c.beginPath(); c.ellipse(60,-55,16,22,0,0,7); c.fill();
+  c.fillStyle='#000'; c.shadowBlur=0;
+  c.fillRect(-59,-52,8,26); c.fillRect(56,-62,8,26);
+}
+
+// decorative backdrop for the menu: the game's own maze generator, drawn as
+// a faint glowing network of corridors, faded in the centre for readability
+export function drawMenuMaze(canvas){
+  const c=canvas.getContext('2d');
+  const cw=canvas.width, ch=canvas.height;
+  const g=genMaze(mulberry32(777),0.12);
+  c.clearRect(0,0,cw,ch);
+  c.save();
+  c.scale(cw/(COLS*TILE), ch/(ROWS*TILE));
+  c.strokeStyle='rgba(96,150,60,0.32)';
+  c.lineWidth=13; c.lineCap='round'; c.lineJoin='round';
+  c.shadowColor='rgba(127,216,88,0.5)'; c.shadowBlur=9;
+  for(let r=0;r<ROWS;r++)for(let cc=0;cc<COLS;cc++){
+    if(g[r][cc]!==0) continue;
+    const a=cellCenter(cc,r);
+    // each corridor segment once: right and down neighbours only
+    for(const [dc,dr] of [[1,0],[0,1]]){
+      const nc=cc+dc, nr=r+dr;
+      if(nc<COLS&&nr<ROWS&&g[nr][nc]===0){
+        const b=cellCenter(nc,nr);
+        c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke();
+      }
+    }
+  }
+  // the exit, glowing at the far end of the maze
+  const e=cellCenter(COLS-2,ROWS-2);
+  c.shadowColor='#7fd858'; c.shadowBlur=16;
+  c.fillStyle='rgba(127,216,88,0.55)';
+  c.beginPath(); c.arc(e.x,e.y,8,0,7); c.fill();
+  c.restore();
+  // carve the centre out so the text stays readable
+  c.globalCompositeOperation='destination-out';
+  const fade=c.createRadialGradient(cw/2,ch*0.42,50, cw/2,ch*0.42,cw*0.58);
+  fade.addColorStop(0,'rgba(0,0,0,0.94)');
+  fade.addColorStop(0.55,'rgba(0,0,0,0.6)');
+  fade.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=fade; c.fillRect(0,0,cw,ch);
+  c.globalCompositeOperation='source-over';
+}
+
+// full monster head for the menu overlay hero, mirrored so it faces the
+// text; CSS places it half-hidden in the overlay corner
+export function drawMenuHero(canvas){
+  const c=canvas.getContext('2d');
+  const s=0.9;
+  c.clearRect(0,0,canvas.width,canvas.height);
+  c.save();
+  c.translate(canvas.width/2+25*s, canvas.height/2); // 25 = head bounds x-offset, flipped by the mirror
+  c.scale(-s,s);
+  drawRexHead(c);
+  c.restore();
 }

@@ -2,7 +2,7 @@ import { mulberry32 } from '../src/rng.js';
 import { createApp, update } from '../src/app.js';
 import { loadLevel } from '../src/level.js';
 import { createHud } from './hud.js';
-import { createRenderer } from './draw.js';
+import { createRenderer, drawMenuHero, drawMenuMaze } from './draw.js';
 import { SFX } from './audio.js';
 import { attachInput } from './input.js';
 import { deathOverlay, winOverlay, levelClearOverlay } from './html.js';
@@ -51,6 +51,8 @@ state.bus.on('game:won', ({score})=>{
 attachInput({ state, canvas, els, sfx:SFX, hud, fx });
 
 loadLevel(state,0); // maze shown behind the menu overlay
+drawMenuMaze(document.getElementById('heroMaze'));
+drawMenuHero(document.getElementById('hero'));
 hud.update(state);
 
 // ---- loop ----
