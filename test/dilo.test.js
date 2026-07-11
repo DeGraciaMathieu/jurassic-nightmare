@@ -105,6 +105,15 @@ test('un flare détourne aussi le dilo', () => {
   assert.equal(d.lureTimer, 5);
 });
 
+test("le dilo entend aussi les sprints", () => {
+  const state = arena();
+  const d = addDilo(state,14,6); // hors de vue, à portée d'ouïe
+  state.keys['a']=true; state.keys['shift']=true;
+  step(state,0.3);
+  assert.equal(d.chasing, false);
+  assert.ok(d.alert > 0);
+});
+
 test("caché dans l'herbe, le joueur échappe au dilo", () => {
   const state = arena();
   state.grassSet.add('9,6'); // la cellule du joueur

@@ -78,6 +78,24 @@ test('un rex hors de vue investigue un flare tombé à proximité', () => {
   assert.ok(d1 < d0, 'il marche vers le flare');
 });
 
+test("sprinter s'entend : un rex hors de vue vient enquêter", () => {
+  const state = arena();
+  const rex = addRex(state,14,6); // à 200 px : hors de portée de vue (145), à portée d'ouïe (220)
+  state.keys['a']=true; state.keys['shift']=true; // sprint vers la gauche, dos au rex
+  step(state,0.3);
+  assert.equal(rex.chasing, false, 'il ne chasse pas, il enquête');
+  assert.ok(rex.alert > 0, 'il a entendu les pas');
+  assert.ok(rex.seenC <= 9, 'il vise la position du bruit');
+});
+
+test('marcher reste silencieux', () => {
+  const state = arena();
+  const rex = addRex(state,14,6);
+  state.keys['a']=true; // marche, sans sprint
+  step(state,0.3);
+  assert.equal(rex.alert, 0);
+});
+
 test('un rex au contact tue le joueur', () => {
   const state = arena();
   let died=false, over=null;

@@ -9,6 +9,7 @@ export const LEVELS = [
 ];
 
 export const LURE_HEAR = 320, LURE_LIFE = 5, HIDE_SIGHT = 54;
+export const SPRINT_HEAR = 220, SPRINT_ALERT = 1.5; // sprint footsteps carry, quieter than a flare
 export const DOOR_HP = 4, DOOR_SENSE = 52, DOOR_SPEED = 7, DOOR_HIT_CD = 0.7;
 export const PR = 11, RR = 15, CR = 9;
 export const DILO_R = 12, DILO_SPIT_RANGE = 140, DILO_SPIT_CD = 1.6, VENOM_SPEED = 240;

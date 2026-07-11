@@ -1,4 +1,4 @@
-import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE, POISON_VISION, POISON_SLOW } from './config.js';
+import { TILE, PR, CR, PLAYER_SPEED, SPRINT_SPEED, STAMINA_MAX, STAMINA_REGEN, LURE_LIFE, POISON_VISION, POISON_SLOW, SPRINT_HEAR, SPRINT_ALERT } from './config.js';
 import { movePlayerAxis } from './physics.js';
 
 export function updatePlayer(state,dt){
@@ -23,6 +23,19 @@ export function updatePlayer(state,dt){
     const mx=vx*spd*dt, my=vy*spd*dt;
     if(mx!==0) movePlayerAxis(state,mx,0);
     if(my!==0) movePlayerAxis(state,0,my);
+  }
+
+  // sprint footsteps carry: nearby predators come to investigate the noise
+  // (an active flare stays louder — lure investigation keeps goal priority)
+  player.noisy = sprinting;
+  if(sprinting){
+    const pc=Math.floor(player.x/TILE), pr=Math.floor(player.y/TILE);
+    for(const beast of [...state.rexes, ...state.dilos]){
+      if(Math.hypot(beast.x-player.x,beast.y-player.y)<SPRINT_HEAR){
+        beast.alert=Math.max(beast.alert,SPRINT_ALERT);
+        beast.seenC=pc; beast.seenR=pr;
+      }
+    }
   }
 
   state.throwCD=Math.max(0,state.throwCD-dt);
