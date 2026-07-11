@@ -17,11 +17,11 @@ auto_invoke: true
 
 ## Ordre des couches de `drawWorld`
 
-sol → grime → décor → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → joueur → marqueur « CACHÉ »
+sol → grime → décor → herbes → murs → portes → sortie (verrou tant que `cardsLeft(state) > 0`) → cartes → flares → venin → sang (`fx.splats`) → rexes → dilos → raptors → joueur → marqueur « CACHÉ »
 
 Décor des couloirs (`buildDecor`/`drawDecor` dans `draw.js`) : types et positions viennent de `state.decor` (placé par `loadLevel` ; les caisses et squelettes craquent sous les pas — gameplay dans `src/player.js`). Seul le jitter visuel (offset, rotation, échelle) est généré côté rendu avec un `mulberry32` seedé par un hash de la grille (jamais le rng du jeu), reconstruit quand `state.grid` change de référence. Palette sourde pour ne pas concurrencer les éléments de gameplay.
 
-Après l'obscurité : `drawPoison()` (vignette verte pulsée tant que `state.poisonT > 0`) puis `drawHeartbeat()`. Les yeux qui luisent dans le noir couvrent rexes (rouges) et dilos (verts).
+Après l'obscurité : `drawPoison()` (vignette verte pulsée tant que `state.poisonT > 0`) puis `drawHeartbeat()`. Les yeux qui luisent dans le noir couvrent rexes (rouges), dilos (verts) et raptors (ambrés). Chaque rôle de raptor a sa robe (`RAPTOR_COLORS` dans `draw.js`, synchronisée avec l'overlay) : rabatteur roux, flanqueur gris-bleu, feinteur ocre.
 
 ## Obscurité (`drawDarkness`)
 
@@ -39,6 +39,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 | `heartbeat` (intensité) | `SFX.heartbeat(intensité)` |
 | `rex:roar` | `fx.shake ≥ 14` + `SFX.roar(false)` |
 | `dilo:hiss` | `SFX.hiss()` |
+| `raptor:bark` | `SFX.bark()` (cri de meute à l'engagement) |
 | `dilo:spit` | `SFX.spit()` (la collerette du sprite s'ouvre via `dilo.spitT`) |
 | `player:poisoned` | `SFX.poisoned()` (la vignette verte et la torche réduite lisent `state.poisonT`/`visionR`) |
 | `player:died` `{x,y}` | `fx.shake = 26` + 10 éclaboussures + `SFX.raptorScream()` + `stopAmbient()` |
@@ -52,7 +53,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 
 ## Audio (`render/audio.js`)
 
-SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `hiss`, `spit`, `poisoned`, `footstep`, `crunch`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
+SFX 100 % synthétisés WebAudio, aucun fichier. `SFX.init()` exige un geste utilisateur (autoplay policy) — déjà appelé au clic du bouton principal et du bouton flare. Ambiance : `startAmbient`/`stopAmbient`. Catalogue : `heartbeat`, `roar`, `raptorScream`, `hiss`, `bark`, `spit`, `poisoned`, `footstep`, `crunch`, `lureThrow`, `doorHit`, `pickup`, `chime`, `toggleMute`.
 
 Les pas de sprint ne passent pas par le bus : la boucle de `main.js` cadence `SFX.footstep()` (toutes les 0.26 s) tant que `state.player.noisy` est vrai — le pendant sonore des anneaux de bruit.
 
@@ -63,6 +64,10 @@ Les pas de sprint ne passent pas par le bus : la boucle de `main.js` cadence `SF
 3. Son → `render/audio.js` (modèle des SFX existants) ; dessin persistant → `draw.js` en lisant `state`/`fx`.
 4. Tout calcul pur (rayon, alpha, couleur) → `render/gfx.js`, importé par `draw.js`.
 5. L'événement reste testable côté `src/` : compter les émissions dans les tests macro.
+
+## Mode debug (`?debug` dans l'URL)
+
+Panneau `#debug` d'`index.html` (masqué par défaut, révélé par `render/main.js` si `location.search` contient `debug`, `z-index` au-dessus de l'overlay) : un `<select>` saute vers n'importe quel secteur (`loadLevel` + `status='play'` + même rituel que le bouton de démarrage — reset `fx`, `hideOverlay`, ambiance) et une case coupe l'obscurité via `fx.dark`, lu par `render()` avant `drawDarkness()`. Aucun impact sur `src/` : pas de test macro requis.
 
 ## Overlays & HUD
 

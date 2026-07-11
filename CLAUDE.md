@@ -15,6 +15,8 @@ Jeu d'infiltration/survie en canvas 2D : ramasser des cartes d'accès et fuir un
 
 Pas de lint/format configuré (choix zéro-dépendance assumé) : suivre le style en place — indentation 2 espaces, code compact, une responsabilité par module.
 
+Mode debug : ajouter `?debug` à l'URL — saut direct vers un secteur et obscurité on/off (purement `render/`, aucun impact sur `src/`).
+
 ## Conventions de code (non négociables)
 
 **Règle d'or : si un changement décide « ce qui se passe », il va dans `src/` et se teste. S'il décide « comment ça s'affiche », il va dans `render/`.**
@@ -32,7 +34,7 @@ Pas de lint/format configuré (choix zéro-dépendance assumé) : suivre le styl
 ## Conventions de domaine
 
 - Grille 19×13 de tuiles de 40 px (canvas 760×520) ; `grid[r][c]` avec `0` = ouvert, `1` = mur ; clés de `Set`/`Map` au format `"c,r"` ; positions d'entités en pixels (centres de cases).
-- Terminologie : *rex* (prédateur de contact), *dilo* (dilophosaure, cracheur de venin du secteur 2), *venom* (globs de venin), *lure*/*flare* (leurre), *grass* (herbes hautes), *decor* (débris de couloir ; les caisses et squelettes craquent sous les pas), secteur (niveau), `chasing`/`alert`/`investigating` (états IA), `status ∈ menu|play|scare|dead|levelclear|win`.
+- Terminologie : *rex* (prédateur de contact), *dilo* (dilophosaure, cracheur de venin du secteur 2), *raptor* (meute du secteur 3, rôles `driver`/`flanker`/`feinter`), *venom* (globs de venin), *lure*/*flare* (leurre), *grass* (herbes hautes), *decor* (débris de couloir ; les caisses et squelettes craquent sous les pas), secteur (niveau), `chasing`/`alert`/`investigating` (états IA), `status ∈ menu|play|scare|dead|levelclear|win`.
 - La **doc vivante** du joueur est le texte statique de l'overlay d'`index.html` (règles du jeu + légende des touches) : toute mécanique modifiée doit y rester exacte.
 
 ## Comportement (process)
