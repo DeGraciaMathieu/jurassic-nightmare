@@ -34,6 +34,7 @@ Calque offscreen `darkCanvas` : gradient radial centré joueur (biais de 22 px v
 | `lure:thrown` | `SFX.lureThrow()` |
 | `card:picked` | `SFX.pickup()` |
 | `door:hit` | `SFX.doorHit()` |
+| `door:broken` | `SFX.doorBreak()` (fracas + résonance métallique) |
 | `heartbeat` (intensité) | `SFX.heartbeat(intensité)` |
 | `rex:roar` | `fx.shake ≥ 14` + `SFX.roar(false)` |
 | `dilo:hiss` | `SFX.hiss()` |

@@ -59,6 +59,7 @@ Ordre des updates dans `update(state, dt)` (`src/app.js`) — à respecter :
 |---|---|---|
 | `rex:roar` | — | `src/rex.js` |
 | `door:hit` | — | `src/rex.js` |
+| `door:broken` | — | `src/rex.js` |
 | `dilo:hiss` | — | `src/dilo.js` |
 | `dilo:spit` | — | `src/dilo.js` |
 | `player:poisoned` | — | `src/dilo.js` |

@@ -38,7 +38,7 @@ Cellule cible `(tc, tr)` ; snap au centre à < 2 px puis choix du pas suivant pa
 | Coincée par un rex | `wedged` si un rex occupe **ou cible** la cellule de la porte |
 | Bloque un patrouilleur | `doorBlocksRex` (`open < 0.75`) exclu du bfs (prédicat) et de l'errance |
 | Solide (collisions, LOS) | `doorSolid` (`open < 0.6`) — un rex peut se glisser pendant la fermeture (0.6–0.75) |
-| Défonçage en chasse | le bfs d'un chasseur ignore les portes ; bloqué au contact, il frappe si `open < 0.25`, cadence `DOOR_HIT_CD=0.7`, `bus.emit('door:hit')`, `hp` de `DOOR_HP=4` → `broken` |
+| Défonçage en chasse | le bfs d'un chasseur ignore les portes ; bloqué au contact, il frappe si `open < 0.25`, cadence `DOOR_HIT_CD=0.7`, `bus.emit('door:hit')`, `hp` de `DOOR_HP=4` → `broken` + `bus.emit('door:broken')` |
 | Engagement | pendant le battage, `alert = max(alert, 0.5)` : le rex reste engagé même prey hors de vue |
 | Capture | distance **pré-mouvement** < `RR + PR − 3` (23 px) |
 

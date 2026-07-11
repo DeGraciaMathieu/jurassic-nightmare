@@ -69,9 +69,12 @@ test('un rex en chasse défonce une porte fermée en quatre coups', () => {
   const D = addDoor(state,9,6);
   const rex = addRex(state,5,6);
   rex.chasing=true; rex.alert=2.2; rex.seenC=16; rex.seenR=6;
-  let hits=0; state.bus.on('door:hit',()=>hits++);
+  let hits=0, crashes=0;
+  state.bus.on('door:hit',()=>hits++);
+  state.bus.on('door:broken',()=>crashes++);
   step(state,5);
   assert.equal(D.broken, true);
   assert.equal(hits, 4);
+  assert.equal(crashes, 1, 'le fracas ne retentit qu\'une fois, au dernier coup');
   assert.ok(rex.x > D.x, 'il est passé au travers');
 });

@@ -52,7 +52,7 @@ export function updateRexes(state,dt){
             if(rex.hitCD<=0 && D.open<0.25){
               rex.hitCD=DOOR_HIT_CD; D.hp--; D.hitT=0.3;
               state.bus.emit('door:hit');
-              if(D.hp<=0) D.broken=true;
+              if(D.hp<=0){ D.broken=true; state.bus.emit('door:broken'); }
             }
           }
           // not chasing: stand off — the path is recomputed against closed doors

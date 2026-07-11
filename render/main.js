@@ -31,6 +31,7 @@ const render = createRenderer(canvas, state, fx);
 state.bus.on('lure:thrown', ()=>SFX.lureThrow());
 state.bus.on('card:picked', ()=>SFX.pickup());
 state.bus.on('door:hit', ()=>SFX.doorHit());
+state.bus.on('door:broken', ()=>SFX.doorBreak());
 state.bus.on('heartbeat', intensity=>SFX.heartbeat(intensity));
 state.bus.on('rex:roar', ()=>{ fx.shake=Math.max(fx.shake,14); SFX.roar(false); });
 state.bus.on('dilo:hiss', ()=>SFX.hiss());

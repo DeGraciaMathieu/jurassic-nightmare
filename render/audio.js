@@ -238,6 +238,34 @@ export const SFX = {
     const ng=this.ctx.createGain(); ng.gain.setValueAtTime(0.3,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     src.connect(hp); hp.connect(ng); ng.connect(this.master); src.start(t); src.stop(t+dur);
   },
+  // ---- door giving way: one massive muffled crash, all low end ----
+  doorBreak(){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime;
+    // deep impact body
+    const o=this.ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(18,t+1.6);
+    const og=this.ctx.createGain(); og.gain.setValueAtTime(2.4,t); og.gain.exponentialRampToValueAtTime(0.0001,t+1.6);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t+1.6);
+    // sub-bass weight
+    const sub=this.ctx.createOscillator(); sub.type='triangle';
+    sub.frequency.setValueAtTime(38,t); sub.frequency.exponentialRampToValueAtTime(12,t+2.0);
+    const sg=this.ctx.createGain(); sg.gain.setValueAtTime(1.9,t); sg.gain.exponentialRampToValueAtTime(0.0001,t+2.0);
+    sub.connect(sg); sg.connect(this.master); sub.start(t); sub.stop(t+2.0);
+    // faint muffled clang, just enough to say metal
+    [150,222].forEach((f,i)=>{
+      const m=this.ctx.createOscillator(); m.type='sine'; m.frequency.value=f;
+      const mg=this.ctx.createGain(); mg.gain.setValueAtTime(0.2/(i+1),t);
+      mg.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+      m.connect(mg); mg.connect(this.master); m.start(t); m.stop(t+0.6);
+    });
+    // heavy rumble of debris settling, trailing off slowly
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuffer(2.2);
+    const lp=this.ctx.createBiquadFilter(); lp.type='lowpass';
+    lp.frequency.setValueAtTime(280,t); lp.frequency.exponentialRampToValueAtTime(50,t+2.2);
+    const ng2=this.ctx.createGain(); ng2.gain.setValueAtTime(1.8,t); ng2.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
+    src.connect(lp); lp.connect(ng2); ng2.connect(this.master); src.start(t); src.stop(t+2.2);
+  },
   // ---- card pickup ----
   pickup(){
     if(!this.ctx||this.muted) return;
